@@ -76,4 +76,10 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function initials(): string
+    {
+        return collect(explode(' ', $this->name))
+            ->map(fn($parte) => strtoupper(mb_substr($parte, 0, 1)))
+            ->join('');
+    }
 }
