@@ -3,8 +3,8 @@
 		📚 Livros
 	</x-slot>
 
-	<div class="overflow-x-auto w-[1300px] mx-auto px-6 py-2">
-		<div class="bg-white shadow rounded-lg p-5 w-full overflow-x-auto">
+	<div class="w-full mx-auto px-16">
+		<div class="bg-white shadow rounded-lg w-full overflow-x-auto pt-8">
 
 			{{-- FORMULÁRIO DE FILTRO E EXPORTAÇÃO --}}
 			<form method="GET" action="{{ route('livros.export') }}" id="export-form" class="flex flex-col items-center gap-4 mb-6">
@@ -65,7 +65,7 @@
 			}
 			@endphp
 
-			<div class="overflow-x-auto">
+			<div class="overflow-x-auto w-full">
 				<table class="table w-full">
 					<thead class="bg-gray-700 text-white font-semibold">
 						<tr>
@@ -74,13 +74,12 @@
 							<th>{!! sort_link('isbn', 'ISBN', $sortField, $sortDirection) !!}</th>
 							<th>{!! sort_link('editora_id', 'Editora', $sortField, $sortDirection) !!}</th>
 							<th>Autores</th>
-							<th class="text-right">{!! sort_link('preco', 'Preço', $sortField, $sortDirection) !!}</th>
-							<th></th>
+							<th class="text-left">{!! sort_link('preco', 'Preço', $sortField, $sortDirection) !!}</th>
 						</tr>
 					</thead>
 					<tbody>
 						@foreach ($livros as $livro)
-							<tr class="hover text-neutral" data-id="{{ $livro->id }}">
+							<tr class="hover text-neutral odd:bg-gray-200 even:bg-white" data-id="{{ $livro->id }}">
 								<td><input type="checkbox" class="checkbox checkbox-primary row-checkbox" /></td>
 								<td>
 									<div class="flex items-center gap-3">
@@ -102,7 +101,7 @@
 										@if (!$loop->last), @endif
 									@endforeach
 								</td>
-								<td class="text-right font-semibold whitespace-nowrap">
+								<td class="text-left font-semibold whitespace-nowrap">
 									€ {{ number_format($livro->preco, 2, ',', '.') }}
 								</td>
 							</tr>

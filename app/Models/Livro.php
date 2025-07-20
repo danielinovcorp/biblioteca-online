@@ -30,7 +30,12 @@ class Livro extends Model
         return $this->belongsToMany(Autor::class);
     }
 
-        public function setBibliografiaAttribute($value)
+    public function requisicoes()
+    {
+        return $this->hasMany(Requisicao::class);
+    }
+
+    public function setBibliografiaAttribute($value)
     {
         $this->attributes['bibliografia'] = Crypt::encryptString($value);
     }

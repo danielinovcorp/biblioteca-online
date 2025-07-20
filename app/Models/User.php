@@ -65,4 +65,15 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function requisicoes()
+    {
+        return $this->hasMany(Requisicao::class);
+    }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
 }

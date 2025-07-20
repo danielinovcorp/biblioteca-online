@@ -3,11 +3,11 @@
 		👤 Autores
 	</x-slot>
 
-	<div class="overflow-x-auto w-[1300px] mx-auto px-6 py-2">
-		<div class="bg-white shadow rounded-lg p-5 w-full overflow-x-auto">
+	<div class="w-full mx-auto px-16">
+		<div class="bg-white shadow rounded-lg w-full overflow-x-auto pt-8">
 			
 			{{-- FORMULÁRIO DE EXPORTAÇÃO --}}
-			<form method="GET" action="{{ route('autores.export') }}" id="export-form" class="mb-6">
+			<form method="GET" action="{{ route('autores.export') }}" id="export-form" class="flex flex-col items-center gap-4 mb-6">
 				{{-- Checkboxes selecionadas --}}
 				<input type="hidden" name="ids" id="selected-ids" />
 
@@ -43,7 +43,7 @@
 				</thead>
 				<tbody>
 					@foreach ($autores as $autor)
-						<tr class="hover text-neutral" data-id="{{ $autor->id }}">
+						<tr class="hover text-neutral odd:bg-gray-200 even:bg-white" data-id="{{ $autor->id }}">
 							<td><input type="checkbox" class="checkbox checkbox-primary row-checkbox" /></td>
 							<td>
 								<div class="avatar">

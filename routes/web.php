@@ -9,6 +9,8 @@ use App\Http\Controllers\EditoraController;
 use App\Exports\LivrosExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
+use App\Http\Controllers\RequisicaoController;
+
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -51,3 +53,10 @@ Route::middleware([
         return view('dashboard');
     })->name('dashboard');
 });
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/requisicoes', [RequisicaoController::class, 'index'])->name('requisicoes.index');
+    Route::get('/requisicoes/criar', [RequisicaoController::class, 'create'])->name('requisicoes.create');
+    Route::post('/requisicoes', [RequisicaoController::class, 'store'])->name('requisicoes.store');
+});
+
