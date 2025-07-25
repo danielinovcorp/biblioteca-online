@@ -33,11 +33,11 @@ class DatabaseSeeder extends Seeder
         ]);
 
         User::create([
-            'name' => 'Admin',
+            'name' => 'Daniel Admin',
             'email' => 'admin@teste.com',
             'email_verified_at' => now(),
-            'password' => Hash::make('password'), // senha: password
+            'password' => Hash::make('password'),
+            'role' => 'admin',
         ]);
-
     }
 }

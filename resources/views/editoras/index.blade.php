@@ -39,12 +39,12 @@
 				</thead>
 				<tbody>
 					@foreach ($editoras as $editora)
-						<tr class="hover text-neutral odd:bg-gray-200 even:bg-white" data-id="{{ $editora->id }}">
+						<tr class="hover text-neutral odd:bg-gray-100 even:bg-white" data-id="{{ $editora->id }}">
 							<td><input type="checkbox" class="checkbox checkbox-primary row-checkbox" /></td>
 							<td>
 								<img src="{{ $editora->logotipo }}"
 									alt="Logótipo de {{ $editora->nome }}"
-									class="w-[40px] h-[40px] rounded object-contain shadow" />
+									class="w-[60px] h-[60px] rounded object-contain shadow" />
 							</td>
 							<td class="font-medium">{{ $editora->nome }}</td>
 						</tr>

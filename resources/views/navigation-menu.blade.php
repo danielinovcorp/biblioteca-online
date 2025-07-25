@@ -110,7 +110,7 @@
 							</div>
 
 							<x-dropdown-link href="{{ route('profile.show') }}">
-								{{ __('Profiles') }}
+								{{ __('Profile') }}
 							</x-dropdown-link>
 
 							@if (Laravel\Jetstream\Jetstream::hasApiFeatures())

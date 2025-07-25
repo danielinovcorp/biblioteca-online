@@ -43,11 +43,11 @@
 				</thead>
 				<tbody>
 					@foreach ($autores as $autor)
-						<tr class="hover text-neutral odd:bg-gray-200 even:bg-white" data-id="{{ $autor->id }}">
+						<tr class="hover text-neutral odd:bg-gray-100 even:bg-white" data-id="{{ $autor->id }}">
 							<td><input type="checkbox" class="checkbox checkbox-primary row-checkbox" /></td>
 							<td>
 								<div class="avatar">
-									<div class="mask mask-squircle h-12 w-12">
+									<div class="mask mask-squircle h-16 w-16">
 										<img src="{{ $autor->foto }}" alt="Foto de {{ $autor->nome }}" />
 									</div>
 								</div>

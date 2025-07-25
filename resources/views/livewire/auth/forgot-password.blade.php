@@ -18,12 +18,12 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
         Password::sendResetLink($this->only('email'));
 
-        session()->flash('status', __('A reset link will be sent if the account exists.'));
+        session()->flash('status', __('Um link de redefinição será enviado se a conta existir.'));
     }
 }; ?>
 
 <div class="flex flex-col gap-6">
-    <x-auth-header :title="__('Forgot password')" :description="__('Enter your email to receive a password reset link')" />
+    <x-auth-header :title="__('Esqueceu a password')" :description="__('Digite seu e-mail e receba um link para redefinir sua senha')" />
 
     <!-- Session Status -->
     <x-auth-session-status class="text-center" :status="session('status')" />
@@ -32,18 +32,18 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <!-- Email Address -->
         <flux:input
             wire:model="email"
-            :label="__('Email Address')"
+            :label="__('Endereço de email')"
             type="email"
             required
             autofocus
-            placeholder="email@example.com"
+            placeholder="email@exemplo.com"
         />
 
-        <flux:button variant="primary" type="submit" class="w-full">{{ __('Email password reset link') }}</flux:button>
+        <flux:button variant="primary" type="submit" class="w-full">{{ __('Email para resetar password') }}</flux:button>
     </form>
 
-    <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-400">
-        <span>{{ __('Or, return to') }}</span>
-        <flux:link :href="route('login')" wire:navigate>{{ __('log in') }}</flux:link>
+    <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-gray-300">
+        <span>{{ __('Ou, volte para') }}</span>
+        <flux:link :href="route('login')" class="text-emerald-400 hover:text-emerald-100" wire:navigate>{{ __('Log in') }}</flux:link>
     </div>
 </div>

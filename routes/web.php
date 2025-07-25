@@ -10,11 +10,13 @@ use App\Exports\LivrosExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use App\Http\Controllers\RequisicaoController;
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Controllers\AdminUsuarioController;
 
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/livros', [LivroController::class, 'index'])->name('livros.index');
+Route::resource('livros', LivroController::class)->except(['show']);
 Route::get('/autores', [AutorController::class, 'index'])->name('autores.index');
 Route::get('/editoras', [EditoraController::class, 'index'])->name('editoras.index');
 
@@ -58,5 +60,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/requisicoes', [RequisicaoController::class, 'index'])->name('requisicoes.index');
     Route::get('/requisicoes/criar', [RequisicaoController::class, 'create'])->name('requisicoes.create');
     Route::post('/requisicoes', [RequisicaoController::class, 'store'])->name('requisicoes.store');
+});
+
+Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/usuarios', [AdminUsuarioController::class, 'index'])->name('usuarios.index');
+    Route::post('/usuarios', [AdminUsuarioController::class, 'store'])->name('usuarios.store');
+    Route::get('/usuarios/{user}/edit', [AdminUsuarioController::class, 'edit'])->name('usuarios.edit');
+    Route::put('/usuarios/{user}', [AdminUsuarioController::class, 'update'])->name('usuarios.update');
+    Route::delete('/usuarios/{user}', [AdminUsuarioController::class, 'destroy'])->name('usuarios.destroy');
 });
 

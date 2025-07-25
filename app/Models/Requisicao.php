@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Requisicao extends Model
 {
+    protected $table = 'requisicoes';
+    
     protected $fillable = [
         'livro_id', 'user_id', 'numero', 'status',
         'foto_cidadao', 'data_inicio', 'data_fim_prevista', 'data_fim_real'
