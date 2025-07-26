@@ -15,9 +15,7 @@
 				<div class="flex flex-col sm:flex-row gap-4 w-full justify-center items-end">
 					{{-- BOTÃO DE EXPORTAR --}}
 					<div class="self-end">
-						<button type="submit" class="btn btn-success">
-							📥 Exportar Excel
-						</button>
+						<button type="submit" class="btn btn-success"><i class="fas fa-file-excel"></i> Exportar Excel</button>
 					</div>
 
 					{{-- FILTRO POR EDITORA --}}
@@ -48,7 +46,11 @@
 					<div class="flex gap-2 self-end">
 						<button type="submit" formaction="{{ route('livros.index') }}" class="btn btn-outline btn-info">Filtrar</button>
 						<a href="{{ route('livros.index') }}" class="btn btn-outline btn-error">Limpar</a>
+						@auth
+						@if (Auth::user()->isAdmin())
 						<label for="modal-add-livro" class="btn btn-primary ml-10"><i class="fa-solid fa-circle-plus"></i> Livro</label>
+						@endif
+						@endauth
 					</div>
 				</div>
 			</form>
@@ -70,14 +72,20 @@
 				<table class="table w-full">
 					<thead class="bg-gray-700 text-white font-semibold">
 						<tr>
-							<th><input id="checkAll" type="checkbox" class="checkbox checkbox-primary" /></th>
-							<th>Capa</th>
-							<th>{!! sort_link('nome', 'Título', $sortField, $sortDirection) !!}</th>
-							<th>{!! sort_link('isbn', 'ISBN', $sortField, $sortDirection) !!}</th>
-							<th>{!! sort_link('editora_id', 'Editora', $sortField, $sortDirection) !!}</th>
-							<th>Autores</th>
-							<th class="text-left">{!! sort_link('preco', 'Preço', $sortField, $sortDirection) !!}</th>
-							<th class="text-center">Ações</th>
+							@auth
+							<th class="w-10 px-2"><input id="checkAll" type="checkbox" class="checkbox checkbox-primary" /></th>
+							@endauth
+							<th class="min-w-[80px]">Capa</th>
+							<th class="min-w-[150px]">{!! sort_link('nome', 'Título', $sortField, $sortDirection) !!}</th>
+							<th class="min-w-[100px]">{!! sort_link('isbn', 'ISBN', $sortField, $sortDirection) !!}</th>
+							<th class="min-w-[120px]">{!! sort_link('editora_id', 'Editora', $sortField, $sortDirection) !!}</th>
+							<th class="min-w-[150px]">Autores</th>
+							<th class="min-w-[80px]">{!! sort_link('preco', 'Preço', $sortField, $sortDirection) !!}</th>
+							@auth
+							@if (Auth::user()->isAdmin())
+							<th class="w-32 text-center">Ações</th>
+							@endif
+							@endauth
 						</tr>
 					</thead>
 					<tbody>
@@ -85,24 +93,24 @@
 						@if(request('edit') == $livro->id)
 						{{-- MODO DE EDIÇÃO --}}
 						<tr class="bg-yellow-50" data-id="{{ $livro->id }}">
-							<form method="POST" action="{{ route('livros.update', $livro->id) }}" enctype="multipart/form-data">
+							<form method="POST" action="{{ route('livros.update', $livro->id) }}" enctype="multipart/form-data" class="contents">
 								@csrf
 								@method('PUT')
 
+								@auth
+								<td class="px-2"><input type="checkbox" class="checkbox checkbox-primary row-checkbox" data-id="{{ $livro->id }}" /></td>
+								@endauth
+
 								<td>
-									<input type="checkbox" class="checkbox checkbox-primary row-checkbox" data-id="{{ $livro->id }}" />
+									<img src="{{ $livro->imagem_capa }}" class="w-[75px] h-[100px] object-cover shadow rounded" />
+									<input type="file" name="imagem_capa" class="file-input file-input-bordered w-full mt-2 bg-white/90 border-gray-200 file:bg-gray-100 file:border-gray-300 file:text-gray-700">
 								</td>
 
-								<td>
-									<img src="{{ $livro->imagem_capa }}" class="w-[50px] h-[75px] object-cover shadow rounded" />
-									<input type="file" name="imagem_capa" class="file-input file-input-sm file-input-bordered bg-white text-black w-full max-w-xs mt-1" />
-								</td>
-
-								<td><input type="text" name="nome" value="{{ $livro->nome }}" class="input input-bordered w-full bg-white text-black" required></td>
-								<td><input type="text" name="isbn" value="{{ $livro->isbn }}" class="input input-bordered w-full bg-white text-black" required></td>
+								<td><input type="text" name="nome" value="{{ $livro->nome }}" class="input input-bordered w-full bg-white/90 border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200" required></td>
+								<td><input type="text" name="isbn" value="{{ $livro->isbn }}" class="input input-bordered w-full bg-white/90 border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200" required></td>
 
 								<td>
-									<select name="editora_id" class="select select-bordered w-full bg-white text-black" required>
+									<select name="editora_id" class="select select-bordered w-full bg-white/90 border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200" required>
 										@foreach ($editoras as $editora)
 										<option value="{{ $editora->id }}" @selected($livro->editora_id == $editora->id)>
 											{{ $editora->nome }}
@@ -112,7 +120,7 @@
 								</td>
 
 								<td>
-									<select name="autores[]" multiple class="select select-bordered w-full bg-white text-black h-32" required>
+									<select name="autores[]" multiple class="select select-bordered w-full h-32 bg-white/90 border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200" required>
 										@foreach ($autores as $autor)
 										<option value="{{ $autor->id }}" @selected($livro->autores->contains($autor->id))>
 											{{ $autor->nome }}
@@ -121,46 +129,51 @@
 									</select>
 								</td>
 
-								<td><input type="number" step="0.01" name="preco" value="{{ $livro->preco }}" class="input input-bordered w-full bg-white text-black" required></td>
+								<td><input type="number" step="0.01" name="preco" value="{{ $livro->preco }}" class="input input-bordered w-full bg-white/90 border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200" required></td>
 
-								<td class="whitespace-nowrap space-x-2 text-center">
-									<button type="submit" class="btn btn-sm btn-ghost hover:bg-gray-100">💾</button>
-									<a href="{{ route('livros.index', request()->except('edit')) }}" class="btn btn-sm btn-ghost hover:bg-gray-100">❌</a>
+								@auth
+								@if(Auth::user()->isAdmin())
+								<td class="w-32 px-2">
+									<div class="flex justify-center space-x-1">
+										<button type="submit" class="btn btn-sm btn-ghost hover:bg-gray-100">💾</button>
+										<a href="{{ route('livros.index', request()->except('edit')) }}" class="btn btn-sm btn-ghost hover:bg-gray-100">❌</a>
+									</div>
 								</td>
+								@endif
+								@endauth
 							</form>
 						</tr>
 						@else
-						{{-- MODO VISUAL --}}
+						{{-- MODO VISUALIZAÇÃO (original) --}}
 						<tr class="hover text-neutral odd:bg-gray-100 even:bg-white" data-id="{{ $livro->id }}">
-							<td>
-								<input type="checkbox" class="checkbox checkbox-primary row-checkbox" data-id="{{ $livro->id }}" />
-							</td>
-
-							<td>
-								<img src="{{ $livro->imagem_capa }}" class="w-[50px] h-[75px] object-cover shadow rounded" />
-							</td>
-
+							@auth
+							<td class="px-2"><input type="checkbox" class="checkbox checkbox-primary row-checkbox" data-id="{{ $livro->id }}" /></td>
+							@endauth
+							<td><img src="{{ $livro->imagem_capa }}" class="w-[75px] h-[100px] object-cover shadow rounded" /></td>
 							<td class="font-medium">{{ $livro->nome }}</td>
 							<td>{{ $livro->isbn }}</td>
 							<td>{{ $livro->editora->nome }}</td>
-							<td>
+							<td class="max-w-[150px]">
 								@foreach ($livro->autores as $autor)
 								<span class="text-sm text-indigo-600">{{ $autor->nome }}</span>
 								@if (!$loop->last)<br> @endif
 								@endforeach
 							</td>
 							<td>€ {{ number_format($livro->preco, 2, ',', '.') }}</td>
-
-							<td class="space-x-2 whitespace-nowrap text-center">
-								<a href="{{ route('livros.index', array_merge(request()->query(), ['edit' => $livro->id])) }}"
-									class="btn btn-sm btn-ghost hover:bg-gray-100">✏️</a>
-
-								<form method="POST" action="{{ route('livros.destroy', $livro->id) }}" class="inline">
-									@csrf
-									@method('DELETE')
-									<button type="submit" onclick="return confirm('Deseja excluir este livro?')" class="btn btn-sm btn-ghost hover:bg-gray-100">🗑️</button>
-								</form>
+							@auth
+							@if(Auth::user()->isAdmin())
+							<td class="w-32 px-2">
+								<div class="flex justify-center space-x-1">
+									<a href="{{ route('livros.index', array_merge(request()->query(), ['edit' => $livro->id])) }}" class="btn btn-sm btn-ghost hover:bg-gray-100">✏️</a>
+									<form method="POST" action="{{ route('livros.destroy', $livro->id) }}" class="inline">
+										@csrf
+										@method('DELETE')
+										<button type="submit" onclick="return confirm('Deseja excluir este livro?')" class="btn btn-sm btn-ghost hover:bg-gray-100">🗑️</button>
+									</form>
+								</div>
 							</td>
+							@endif
+							@endauth
 						</tr>
 						@endif
 						@endforeach

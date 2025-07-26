@@ -39,11 +39,11 @@ new #[Layout('components.layouts.auth')] class extends Component {
             placeholder="email@exemplo.com"
         />
 
-        <flux:button variant="primary" type="submit" class="w-full">{{ __('Email para resetar password') }}</flux:button>
+        <flux:button variant="primary" type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white">{{ __('Email para resetar password') }}</flux:button>
     </form>
 
     <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-gray-300">
         <span>{{ __('Ou, volte para') }}</span>
-        <flux:link :href="route('login')" class="text-emerald-400 hover:text-emerald-100" wire:navigate>{{ __('Log in') }}</flux:link>
+        <flux:link :href="route('login')" class="text-emerald-600 hover:text-emerald-300" wire:navigate>{{ __('Log in') }}</flux:link>
     </div>
 </div>

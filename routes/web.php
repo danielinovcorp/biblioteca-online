@@ -17,8 +17,8 @@ use App\Http\Controllers\AdminUsuarioController;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::resource('livros', LivroController::class)->except(['show']);
-Route::get('/autores', [AutorController::class, 'index'])->name('autores.index');
-Route::get('/editoras', [EditoraController::class, 'index'])->name('editoras.index');
+Route::resource('autores', AutorController::class)->except(['show']);
+Route::resource('editoras', EditoraController::class)->except(['show', 'create', 'edit']);
 
 Route::get('/livros/exportar', function (Request $request) {
     return Excel::download(new LivrosExport(

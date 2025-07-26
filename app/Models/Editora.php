@@ -17,14 +17,4 @@ class Editora extends Model
     {
         return $this->hasMany(Livro::class);
     }
-
-        public function setNomeAttribute($value)
-    {
-        $this->attributes['nome'] = Crypt::encryptString($value);
-    }
-
-    public function getNomeAttribute($value)
-    {
-        return Crypt::decryptString($value);
-    }
 }

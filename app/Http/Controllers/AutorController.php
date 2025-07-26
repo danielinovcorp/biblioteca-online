@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Autor;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AutoresExport;
+
 class AutorController extends Controller
 {
     public function index(Request $request)
@@ -46,4 +47,51 @@ class AutorController extends Controller
         return Excel::download(new AutoresExport($autores->pluck('id')->toArray()), 'autores.xlsx');
     }
 
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'foto' => 'nullable|image|max:2048',
+        ]);
+
+        $autor = new Autor();
+        $autor->nome = $request->nome;
+
+        if ($request->hasFile('foto')) {
+            $path = $request->file('foto')->store('autores', 'public');
+            $autor->foto = '/storage/' . $path;
+        }
+
+        $autor->save();
+
+        return redirect()->route('autores.index')->with('success', 'Autor adicionado com sucesso!');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'foto' => 'nullable|image|max:2048',
+        ]);
+
+        $autor = Autor::findOrFail($id);
+        $autor->nome = $request->nome;
+
+        if ($request->hasFile('foto')) {
+            $path = $request->file('foto')->store('autores', 'public');
+            $autor->foto = '/storage/' . $path;
+        }
+
+        $autor->save();
+
+        return redirect()->route('autores.index')->with('success', 'Autor atualizado com sucesso!');
+    }
+
+    public function destroy($id)
+    {
+        $autor = Autor::findOrFail($id);
+        $autor->delete();
+
+        return redirect()->route('autores.index')->with('success', 'Autor excluído com sucesso!');
+    }
 }

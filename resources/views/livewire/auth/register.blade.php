@@ -86,7 +86,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
         />
 
         <div class="flex items-center justify-end">
-            <flux:button type="submit" variant="primary" class="w-full">
+            <flux:button type="submit" variant="primary" class="w-full bg-green-600 hover:bg-green-500 text-white">
                 {{ __('Criar conta') }}
             </flux:button>
         </div>
@@ -94,6 +94,6 @@ new #[Layout('components.layouts.auth')] class extends Component {
 
     <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-gray-300">
         <span>{{ __('Já tem uma conta?') }}</span>
-        <flux:link :href="route('login')" class="text-emerald-400 hover:text-emerald-100" wire:navigate>{{ __('Log in') }}</flux:link>
+        <flux:link :href="route('login')" class="text-emerald-600 hover:text-emerald-300" wire:navigate>{{ __('Log in') }}</flux:link>
     </div>
 </div>

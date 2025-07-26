@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Middleware\IsAdmin;
 
 class AdminUsuarioController extends Controller
 {

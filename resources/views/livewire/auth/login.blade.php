@@ -104,7 +104,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             />
 
             @if (Route::has('password.request'))
-                <flux:link class="absolute end-0 top-0 text-sm text-emerald-400 hover:text-emerald-100" :href="route('password.request')" wire:navigate>
+                <flux:link class="absolute end-0 top-0 text-sm text-emerald-600 hover:text-emerald-300" :href="route('password.request')" wire:navigate>
                     {{ __('Esqueceu sua senha?') }}
                 </flux:link>
             @endif
@@ -114,14 +114,14 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <flux:checkbox wire:model="remember" :label="__('Relembrar')" />
 
         <div class="flex items-center justify-end">
-            <flux:button variant="primary" type="submit" class="w-full">{{ __('Log in') }}</flux:button>
+            <flux:button variant="primary" type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white">{{ __('Log in') }}</flux:button>
         </div>
     </form>
 
     @if (Route::has('register'))
         <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-gray-300">
             <span>{{ __('Não tem uma conta?') }}</span>
-            <flux:link :href="route('register')" class="text-emerald-400 hover:text-emerald-100" wire:navigate>{{ __('Inscrever-se') }}</flux:link>
+            <flux:link :href="route('register')" class="text-emerald-600 hover:text-emerald-300" wire:navigate>{{ __('Inscrever-se') }}</flux:link>
         </div>
     @endif
 </div>
