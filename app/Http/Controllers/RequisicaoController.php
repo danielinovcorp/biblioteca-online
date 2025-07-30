@@ -43,11 +43,14 @@ class RequisicaoController extends Controller
 
 		foreach ($requisicoes as $req) {
 			if ($req->status === 'devolvida' && $req->data_fim_real && $req->data_inicio) {
-				$req->dias_decorridos = \Carbon\Carbon::parse($req->data_inicio)->diffInDays($req->data_fim_real);
+				$inicio = \Carbon\Carbon::parse($req->data_inicio)->startOfDay();
+				$fim = \Carbon\Carbon::parse($req->data_fim_real)->startOfDay();
+				$req->dias_decorridos = $inicio->diffInDays($fim);
 			} else {
 				$req->dias_decorridos = null;
 			}
 		}
+
 
 
 		return view('requisicoes.index', compact(
@@ -137,5 +140,15 @@ class RequisicaoController extends Controller
 			DB::rollBack();
 			return back()->with('error', 'Erro ao criar requisição. Tente novamente.');
 		}
+	}
+
+	public function confirmarDevolucao(Requisicao $requisicao)
+	{
+		// Atualiza o status para 'devolvida' e registra a data de devolução
+		$requisicao->status = 'devolvida';
+		$requisicao->data_fim_real = now();
+		$requisicao->save();
+
+		return redirect()->route('requisicoes.index')->with('success', 'Devolução confirmada com sucesso.');
 	}
 }
