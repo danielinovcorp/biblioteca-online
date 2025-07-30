@@ -13,7 +13,7 @@ class LivroController extends Controller
 {
 	public function index(Request $request)
 	{
-		$query = Livro::with(['editora', 'autores']);
+		$query = Livro::with(['editora', 'autores', 'requisicoes.user']);
 
 		if ($request->filled('search')) {
 			$search = $request->search;
@@ -111,5 +111,14 @@ class LivroController extends Controller
 		$livro->delete();
 
 		return redirect()->route('livros.index')->with('success', 'Livro excluído com sucesso!');
+	}
+
+	public function show(Livro $livro)
+	{
+		$livro->load(['editora', 'autores', 'requisicoes.user']);
+
+		$requisicoes = $livro->requisicoes()->latest()->get();
+
+		return view('livros.show', compact('livro', 'requisicoes'));
 	}
 }

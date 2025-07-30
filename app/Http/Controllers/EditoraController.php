@@ -21,7 +21,7 @@ class EditoraController extends Controller
             $query->where('nome', 'like', '%' . $request->input('q') . '%');
         }
 
-        $editoras = $query->orderBy($sortField, $sortDirection)->get();
+        $editoras = Editora::with(['livros.editora', 'livros.autores'])->get();
 
         return view('editoras.index', compact('editoras', 'sortField', 'sortDirection'));
     }

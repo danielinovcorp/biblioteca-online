@@ -18,18 +18,6 @@
 						<button type="submit" class="btn btn-success"><i class="fas fa-file-excel"></i> Exportar Excel</button>
 					</div>
 
-					{{-- FILTRO POR EDITORA --}}
-					<div class="form-control w-full max-w-xs">
-						<select name="editora_id" class="select select-neutral select-bordered w-full bg-white text-gray-900">
-							<option value="">Todas as Editoras</option>
-							@foreach ($editoras as $editora)
-							<option value="{{ $editora->id }}" @selected(request('editora_id')==$editora->id)>
-								{{ $editora->nome }}
-							</option>
-							@endforeach
-						</select>
-					</div>
-
 					{{-- FILTRO POR AUTOR --}}
 					<div class="form-control w-full max-w-xs">
 						<select name="autor_id" class="select select-neutral select-bordered w-full bg-white text-gray-900">
@@ -37,6 +25,18 @@
 							@foreach ($autores as $autor)
 							<option value="{{ $autor->id }}" @selected(request('autor_id')==$autor->id)>
 								{{ $autor->nome }}
+							</option>
+							@endforeach
+						</select>
+					</div>
+
+					{{-- FILTRO POR EDITORA --}}
+					<div class="form-control w-full max-w-xs">
+						<select name="editora_id" class="select select-neutral select-bordered w-full bg-white text-gray-900">
+							<option value="">Todas as Editoras</option>
+							@foreach ($editoras as $editora)
+							<option value="{{ $editora->id }}" @selected(request('editora_id')==$editora->id)>
+								{{ $editora->nome }}
 							</option>
 							@endforeach
 						</select>
@@ -78,9 +78,10 @@
 							<th class="min-w-[80px]">Capa</th>
 							<th class="min-w-[150px]">{!! sort_link('nome', 'Título', $sortField, $sortDirection) !!}</th>
 							<th class="min-w-[100px]">{!! sort_link('isbn', 'ISBN', $sortField, $sortDirection) !!}</th>
-							<th class="min-w-[120px]">{!! sort_link('editora_id', 'Editora', $sortField, $sortDirection) !!}</th>
 							<th class="min-w-[150px]">Autores</th>
+							<th class="min-w-[120px]">{!! sort_link('editora_id', 'Editora', $sortField, $sortDirection) !!}</th>
 							<th class="min-w-[80px]">{!! sort_link('preco', 'Preço', $sortField, $sortDirection) !!}</th>
+							<th>Disponível?</th>
 							@auth
 							@if (Auth::user()->isAdmin())
 							<th class="w-32 text-center">Ações</th>
@@ -103,21 +104,11 @@
 
 								<td>
 									<img src="{{ $livro->imagem_capa }}" class="w-[75px] h-[100px] object-cover shadow rounded" />
-									<input type="file" name="imagem_capa" class="file-input file-input-bordered w-full mt-2 bg-white/90 border-gray-200 file:bg-gray-100 file:border-gray-300 file:text-gray-700">
+									<input type="file" name="imagem_capa" class="file-input input-sm file-input-bordered w-64 mt-2 bg-white/90 border-gray-200 file:bg-gray-100 file:border-gray-300 file:text-gray-700">
 								</td>
 
 								<td><input type="text" name="nome" value="{{ $livro->nome }}" class="input input-bordered w-full bg-white/90 border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200" required></td>
 								<td><input type="text" name="isbn" value="{{ $livro->isbn }}" class="input input-bordered w-full bg-white/90 border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200" required></td>
-
-								<td>
-									<select name="editora_id" class="select select-bordered w-full bg-white/90 border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200" required>
-										@foreach ($editoras as $editora)
-										<option value="{{ $editora->id }}" @selected($livro->editora_id == $editora->id)>
-											{{ $editora->nome }}
-										</option>
-										@endforeach
-									</select>
-								</td>
 
 								<td>
 									<select name="autores[]" multiple class="select select-bordered w-full h-32 bg-white/90 border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200" required>
@@ -129,7 +120,25 @@
 									</select>
 								</td>
 
+								<td>
+									<select name="editora_id" class="select select-bordered w-full bg-white/90 border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200" required>
+										@foreach ($editoras as $editora)
+										<option value="{{ $editora->id }}" @selected($livro->editora_id == $editora->id)>
+											{{ $editora->nome }}
+										</option>
+										@endforeach
+									</select>
+								</td>
+
 								<td><input type="number" step="0.01" name="preco" value="{{ $livro->preco }}" class="input input-bordered w-full bg-white/90 border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200" required></td>
+
+								<td>
+									@if($livro->disponivel)
+									<span class="badge badge-success">✔</span>
+									@else
+									<span class="badge badge-error">✘</span>
+									@endif
+								</td>
 
 								@auth
 								@if(Auth::user()->isAdmin())
@@ -149,17 +158,29 @@
 							@auth
 							<td class="px-2"><input type="checkbox" class="checkbox checkbox-primary row-checkbox" data-id="{{ $livro->id }}" /></td>
 							@endauth
-							<td><img src="{{ $livro->imagem_capa }}" class="w-[75px] h-[100px] object-cover shadow rounded" /></td>
-							<td class="font-medium">{{ $livro->nome }}</td>
+							<td onclick='mostrarLivro(@json($livro))' class="cursor-pointer">
+								<img src="{{ $livro->imagem_capa }}" class="w-[75px] h-[100px] object-cover shadow rounded" />
+							</td>
+
+							<td onclick='mostrarLivro(@json($livro))' class="cursor-pointer hover:underline text-blue-600 font-medium">
+								{{ $livro->nome }}
+							</td>
 							<td>{{ $livro->isbn }}</td>
-							<td>{{ $livro->editora->nome }}</td>
 							<td class="max-w-[150px]">
 								@foreach ($livro->autores as $autor)
-								<span class="text-sm text-indigo-600">{{ $autor->nome }}</span>
+								<span class="text-sm">{{ $autor->nome }}</span>
 								@if (!$loop->last)<br> @endif
 								@endforeach
 							</td>
+							<td>{{ $livro->editora->nome }}</td>
 							<td>€ {{ number_format($livro->preco, 2, ',', '.') }}</td>
+							<td>
+								@if($livro->disponivel)
+								<span class="badge badge-success">Sim</span>
+								@else
+								<span class="badge badge-error">Não</span>
+								@endif
+							</td>
 							@auth
 							@if(Auth::user()->isAdmin())
 							<td class="w-32 px-2">
@@ -182,28 +203,6 @@
 			</div>
 		</div>
 	</div>
-
-	{{-- SCRIPT PARA CHECKBOX E EXPORTAÇÃO --}}
-	<script>
-		document.addEventListener('DOMContentLoaded', function() {
-			const checkAll = document.getElementById('checkAll');
-			const rowCheckboxes = document.querySelectorAll('.row-checkbox');
-			const exportForm = document.getElementById('export-form');
-			const selectedIdsInput = document.getElementById('selected-ids');
-
-			checkAll.addEventListener('change', function() {
-				rowCheckboxes.forEach(cb => cb.checked = checkAll.checked);
-			});
-
-			exportForm.addEventListener('submit', function(e) {
-				const selected = Array.from(rowCheckboxes)
-					.filter(cb => cb.checked)
-					.map(cb => cb.closest('tr').dataset.id);
-
-				selectedIdsInput.value = selected.join(',');
-			});
-		});
-	</script>
 
 	{{-- MODAL: Adicionar Novo Livro --}}
 	<input type="checkbox" id="modal-add-livro" class="modal-toggle" />
@@ -249,4 +248,151 @@
 			</form>
 		</div>
 	</div>
+
+	{{-- MODAL: Detalhes do Livro --}}
+	<input type="checkbox" id="modal-detalhes-livro" class="modal-toggle" />
+	<div class="modal">
+		<div class="modal-box w-11/12 max-w-4xl text-left" data-theme="light">
+
+			<div class="flex flex-col md:flex-row gap-6">
+				<img id="modal-livro-capa" src="" class="w-[200px] h-[240px] rounded shadow" />
+
+				<div class="flex flex-col gap-2 text-sm">
+					<h3 id="modal-livro-nome" class="text-2xl font-bold text-indigo-700 mb-1"></h3>
+
+					<p><strong class="text-gray-700">ISBN:</strong> <span id="modal-livro-isbn"></span></p>
+					<p><strong class="text-gray-700">Editora:</strong> <span id="modal-livro-editora"></span></p>
+					<p><strong class="text-gray-700">Autores:</strong> <span id="modal-livro-autores"></span></p>
+					<p><strong class="text-gray-700">Preço:</strong> €<span id="modal-livro-preco"></span></p>
+					<p><strong>Disponível:</strong> <span id="modal-livro-disponivel"></span></p>
+
+					<p><strong class="text-gray-700">Bibliografia:</strong></p>
+					<p id="modal-livro-bibliografia" class="whitespace-pre-wrap text-justify text-gray-800"></p>
+				</div>
+			</div>
+
+			<div class="modal-action mt-6 flex flex-col md:flex-row items-center justify-end gap-4">
+				<div class="mt-6">
+					<h4 class="text-lg font-semibold mb-2">📖 Histórico de Requisições</h4>
+					<div id="historico-requisicoes" class="overflow-x-auto">
+						<p class="text-gray-500 italic">Carregando histórico...</p>
+					</div>
+				</div>
+
+				<form id="form-requisitar-livro" method="GET" action="{{ route('requisicoes.create') }}">
+					<input type="hidden" name="livro_id" id="input-livro-id" />
+					<button type="submit" class="btn btn-primary">
+						📚 Requisitar este livro
+					</button>
+				</form>
+
+				<label for="modal-detalhes-livro" class="btn">Fechar</label>
+			</div>
+
+		</div>
+	</div>
+
+	{{-- SCRIPT PARA MODAL DE DETALHES DO LIVRO --}}
+	<script>
+		function mostrarLivro(livro) {
+			const autores = Array.isArray(livro.autores) ?
+				livro.autores.map(a => a.nome).join(', ') :
+				livro.autores;
+
+			document.getElementById('modal-livro-nome').innerText = livro.nome;
+			document.getElementById('modal-livro-isbn').innerText = livro.isbn ?? 'N/A';
+			document.getElementById('modal-livro-editora').innerText = livro.editora?.nome ?? 'N/A';
+			document.getElementById('modal-livro-autores').innerText = autores;
+			document.getElementById('modal-livro-preco').innerText = livro.preco ?? '0.00';
+			document.getElementById('modal-livro-disponivel').innerText = livro.disponivel ? 'Sim' : 'Não';
+			document.getElementById('modal-livro-bibliografia').innerText = livro.bibliografia ?? '';
+			document.getElementById('modal-livro-capa').src = livro.imagem_capa ?? '';
+
+			// Preenche o campo hidden com o ID do livro
+			const inputLivroId = document.getElementById('input-livro-id');
+			if (inputLivroId) {
+				inputLivroId.value = livro.id;
+			}
+
+			// Mostrar ou esconder o botão de requisição com base na disponibilidade
+			const formRequisitar = document.getElementById('form-requisitar-livro');
+			if (formRequisitar) {
+				if (livro.disponivel) {
+					formRequisitar.classList.remove('hidden');
+				} else {
+					formRequisitar.classList.add('hidden');
+				}
+			}
+
+			// Requisições
+			const historicoContainer = document.getElementById('historico-requisicoes');
+			if (livro.requisicoes && livro.requisicoes.length > 0) {
+				const rows = livro.requisicoes.map(req => `
+					<tr>
+						<td>${req.numero}</td>
+						<td>${req.user?.name ?? 'Desconhecido'}</td>
+						<td>${req.data_inicio}</td>
+						<td>${req.data_fim_prevista}</td>
+						<td>${req.data_fim_real ?? '<span class="italic text-gray-400">Pendente</span>'}</td>
+						<td>
+							<span class="badge badge-${req.status === 'ativa' ? 'success' : (req.status === 'devolvida' ? 'info' : 'warning')}">
+								${req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+							</span>
+						</td>
+					</tr>
+				`).join('');
+
+				historicoContainer.innerHTML = `
+					<table class="table table-zebra w-full text-sm">
+						<thead class="bg-gray-100">
+							<tr>
+								<th>#</th>
+								<th>Cidadão</th>
+								<th>Início</th>
+								<th>Previsão Fim</th>
+								<th>Fim Real</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody>${rows}</tbody>
+					</table>
+	`;
+			} else {
+				historicoContainer.innerHTML = `<p class="text-gray-500 italic">Nenhuma requisição registrada.</p>`;
+			}
+
+
+			// Armazenar o livro_id na sessionStorage antes de abrir o modal
+			sessionStorage.setItem('livro_id_requisicao', livro.id);
+
+			// Abrir o modal
+			document.getElementById('modal-detalhes-livro').checked = true;
+
+			document.getElementById('input-livro-id').value = livro.id;
+
+		}
+	</script>
+
+	{{-- SCRIPT PARA CHECKBOX E EXPORTAÇÃO --}}
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const checkAll = document.getElementById('checkAll');
+			const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+			const exportForm = document.getElementById('export-form');
+			const selectedIdsInput = document.getElementById('selected-ids');
+
+			checkAll.addEventListener('change', function() {
+				rowCheckboxes.forEach(cb => cb.checked = checkAll.checked);
+			});
+
+			exportForm.addEventListener('submit', function(e) {
+				const selected = Array.from(rowCheckboxes)
+					.filter(cb => cb.checked)
+					.map(cb => cb.closest('tr').dataset.id);
+
+				selectedIdsInput.value = selected.join(',');
+			});
+		});
+	</script>
+
 </x-guest-layout>

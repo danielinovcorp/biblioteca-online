@@ -37,7 +37,10 @@ class AdminUsuarioController extends Controller
             $sortDirection = 'asc';
         }
 
-        $usuarios = $query->orderBy($sortField, $sortDirection)->get();
+        $usuarios = $query
+            ->with(['requisicoes.livro']) // ← carrega histórico de requisições + livros
+            ->orderBy($sortField, $sortDirection)
+            ->get();
 
         return view('admin.usuarios.index', compact('usuarios', 'sortField', 'sortDirection'));
     }

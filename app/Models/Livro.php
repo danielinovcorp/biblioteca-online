@@ -20,6 +20,8 @@ class Livro extends Model
         'preco',
     ];
 
+    protected $appends = ['disponivel'];
+    
     public function editora()
     {
         return $this->belongsTo(Editora::class);
@@ -35,13 +37,10 @@ class Livro extends Model
         return $this->hasMany(Requisicao::class);
     }
 
-    public function setBibliografiaAttribute($value)
+    public function getDisponivelAttribute()
     {
-        $this->attributes['bibliografia'] = Crypt::encryptString($value);
-    }
-
-    public function getBibliografiaAttribute($value)
-    {
-        return Crypt::decryptString($value);
+        return !$this->requisicoes()
+            ->where('status', 'ativa')
+            ->exists();
     }
 }

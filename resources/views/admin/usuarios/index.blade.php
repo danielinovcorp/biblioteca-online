@@ -112,14 +112,16 @@
 					@else
 					{{-- LINHA NORMAL --}}
 					<tr class="hover text-neutral odd:bg-gray-100 even:bg-white">
-						<td>
-							<img src="{{ $user->profile_photo_path ? $user->profile_photo_url : asset('images/default-user.png') }}"
-								alt="Foto de {{ $user->name }}"
-								class="w-[50px] h-[50px] rounded-full object-cover shadow" />
+						<td onclick='mostrarUsuario(@json($user))' class="cursor-pointer">
+							<img src="{{ $user->profile_photo_url }}" class="w-10 h-10 rounded-full object-cover" />
 						</td>
-						<td class="font-medium">{{ $user->name }}</td>
+
+						<td onclick='mostrarUsuario(@json($user))' class="cursor-pointer text-indigo-600 hover:underline font-medium">
+							{{ $user->name }}
+						</td>
+
 						<td>{{ $user->email }}</td>
-						<td class="{{ $user->role === 'admin' ? 'text-red-600 font-bold' : 'text-blue-600' }}">
+						<td class="{{ $user->role === 'admin' ? 'text-red-600 font-bold' : 'text-green-600 font-bold' }}">
 							{{ ucfirst($user->role) }}
 						</td>
 						<td class="space-x-2 whitespace-nowrap text-center">
@@ -139,6 +141,89 @@
 			</table>
 		</div>
 	</div>
+
+	{{-- MODAL: Detalhes do Usuário --}}
+	<input type="checkbox" id="modal-detalhes-usuario" class="modal-toggle" />
+	<div class="modal">
+		<div class="modal-box w-11/12 max-w-4xl text-left" data-theme="light">
+
+			<div class="flex flex-col md:flex-row gap-6">
+				<img id="modal-usuario-foto" src="" class="w-24 h-24 object-cover rounded-full shadow" />
+
+				<div class="flex flex-col gap-2 text-sm w-full">
+					<h3 id="modal-usuario-nome" class="text-xl font-bold text-indigo-700 mb-1"></h3>
+
+					<p><strong>Email:</strong> <span id="modal-usuario-email"></span></p>
+					<p><strong>Tipo:</strong> <span id="modal-usuario-tipo"></span></p>
+					<p><strong>Registrado em:</strong> <span id="modal-usuario-data"></span></p>
+				</div>
+			</div>
+
+			{{-- Histórico de requisições --}}
+			<div class="mt-6">
+				<h4 class="text-lg font-semibold mb-2">📚 Histórico de Requisições</h4>
+				<div id="historico-requisicoes-usuario" class="overflow-x-auto">
+					<p class="text-gray-500 italic">Carregando...</p>
+				</div>
+			</div>
+
+			<div class="modal-action mt-6">
+				<label for="modal-detalhes-usuario" class="btn">Fechar</label>
+			</div>
+		</div>
+
+	</div>
+
+	<!-- Detalhes usuarios -->
+	<script>
+		function mostrarUsuario(user) {
+			document.getElementById('modal-usuario-nome').innerText = user.name;
+			document.getElementById('modal-usuario-email').innerText = user.email;
+			document.getElementById('modal-usuario-tipo').innerText = user.role ?? 'Desconhecido';
+			document.getElementById('modal-usuario-data').innerText = new Date(user.created_at).toLocaleDateString();
+			document.getElementById('modal-usuario-foto').src = user.profile_photo_url ?? '/images/default-user.png';
+
+			// Requisições
+			const container = document.getElementById('historico-requisicoes-usuario');
+			if (user.requisicoes && user.requisicoes.length > 0) {
+				const rows = user.requisicoes.map(req => `
+				<tr>
+					<td>${req.numero}</td>
+					<td>${req.livro?.nome ?? 'Livro desconhecido'}</td>
+					<td>${req.data_inicio}</td>
+					<td>${req.data_fim_prevista}</td>
+					<td>${req.data_fim_real ?? '<span class="italic text-gray-400">Pendente</span>'}</td>
+					<td>
+						<span class="badge badge-${req.status === 'ativa' ? 'success' : (req.status === 'devolvida' ? 'info' : 'warning')}">
+							${req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+						</span>
+					</td>
+				</tr>
+			`).join('');
+
+				container.innerHTML = `
+				<table class="table table-zebra w-full text-sm">
+					<thead class="bg-gray-100">
+						<tr>
+							<th>#</th>
+							<th>Livro</th>
+							<th>Início</th>
+							<th>Previsão Fim</th>
+							<th>Fim Real</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody>${rows}</tbody>
+				</table>
+			`;
+			} else {
+				container.innerHTML = `<p class="text-gray-500 italic">Este utilizador ainda não requisitou livros.</p>`;
+			}
+
+			document.getElementById('modal-detalhes-usuario').checked = true;
+		}
+	</script>
+
 
 	{{-- JS: Mostrar formulário --}}
 	<script>

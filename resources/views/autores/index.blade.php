@@ -75,12 +75,15 @@
 							@endif
 							@endauth
 
-							<td>
+							<td onclick='mostrarAutor(@json($autor))' class="cursor-pointer">
 								<img src="{{ $autor->foto ?? asset('images/default-user.png') }}"
 									class="w-12 h-12 rounded-full object-cover border-2 border-white" />
 							</td>
 
-							<td class="font-medium">{{ $autor->nome }}</td>
+							<td onclick='mostrarAutor(@json($autor))' class="cursor-pointer font-medium text-indigo-600 hover:underline">
+								{{ $autor->nome }}
+							</td>
+
 
 							@auth
 							@if(Auth::user()->isAdmin())
@@ -147,6 +150,57 @@
 	@endif
 	@endauth
 
+	{{-- MODAL: Detalhes do Autor --}}
+	<input type="checkbox" id="modal-detalhes-autor" class="modal-toggle" />
+	<div class="modal">
+		<div class="modal-box w-11/12 max-w-xl text-left" data-theme="light">
+
+			<div class="flex flex-col md:flex-row gap-6">
+				<img id="modal-autor-foto" src="" class="w-32 h-32 object-cover rounded-full shadow" />
+
+				<div class="flex flex-col gap-2 text-sm w-full">
+					<h3 id="modal-autor-nome" class="text-xl font-bold text-indigo-700 mb-2"></h3>
+
+					<div>
+						<p class="font-semibold text-gray-700 mb-1">Livros escritos:</p>
+						<ul id="modal-autor-livros" class="list-disc pl-5 text-gray-800">
+							{{-- Preenchido via JS --}}
+						</ul>
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-action mt-6">
+				<label for="modal-detalhes-autor" class="btn">Fechar</label>
+			</div>
+		</div>
+	</div>
+
+	{{-- MODAL: Detalhes do Livro --}}
+	<input type="checkbox" id="modal-detalhes-livro" class="modal-toggle" />
+	<div class="modal">
+		<div class="modal-box w-11/12 max-w-4xl text-left" data-theme="light">
+			<div class="flex flex-col md:flex-row gap-6">
+				<img id="modal-livro-capa" src="" class="w-40 h-auto rounded shadow" />
+
+				<div class="flex flex-col gap-2 text-sm">
+					<h3 id="modal-livro-nome" class="text-2xl font-bold text-indigo-700 mb-1"></h3>
+
+					<p><strong class="text-gray-700">ISBN:</strong> <span id="modal-livro-isbn"></span></p>
+					<p><strong class="text-gray-700">Editora:</strong> <span id="modal-livro-editora"></span></p>
+					<p><strong class="text-gray-700">Autores:</strong> <span id="modal-livro-autores"></span></p>
+					<p><strong class="text-gray-700">Preço:</strong> €<span id="modal-livro-preco"></span></p>
+
+					<p><strong class="text-gray-700">Bibliografia:</strong></p>
+					<p id="modal-livro-bibliografia" class="whitespace-pre-wrap text-justify text-gray-800"></p>
+				</div>
+			</div>
+
+			<div class="modal-action mt-6">
+				<label for="modal-detalhes-livro" class="btn">Fechar</label>
+			</div>
+		</div>
+	</div>
 
 	{{-- SCRIPT PARA CHECKBOX --}}
 	<script>
@@ -172,4 +226,60 @@
 			}
 		});
 	</script>
+
+	<!--  Exibir autor  -->
+	<script>
+		function mostrarAutor(autor) {
+			// Define nome e foto
+			document.getElementById('modal-autor-nome').innerText = autor.nome;
+			document.getElementById('modal-autor-foto').src = autor.foto ?? '/images/default-autor.png';
+
+			// Lista de livros
+			const lista = document.getElementById('modal-autor-livros');
+			lista.innerHTML = ''; // limpa anterior
+
+			if (autor.livros && autor.livros.length > 0) {
+				autor.livros.forEach(livro => {
+					const li = document.createElement('li');
+					const link = document.createElement('a');
+					link.href = 'javascript:void(0)';
+					link.className = 'text-blue-600 hover:underline';
+					link.textContent = livro.nome;
+					link.onclick = function() {
+						mostrarLivro(livro);
+					};
+
+					li.appendChild(link);
+					lista.appendChild(li);
+				});
+			} else {
+				const li = document.createElement('li');
+				li.textContent = 'Nenhum livro registrado.';
+				lista.appendChild(li);
+			}
+
+			// Abre o modal
+			document.getElementById('modal-detalhes-autor').checked = true;
+		}
+	</script>
+
+	<!-- Exibir Livros -->
+	<script>
+		function mostrarLivro(livro) {
+			const autores = Array.isArray(livro.autores) ?
+				livro.autores.map(a => a.nome).join(', ') :
+				livro.autores;
+
+			document.getElementById('modal-livro-nome').innerText = livro.nome;
+			document.getElementById('modal-livro-isbn').innerText = livro.isbn ?? 'N/A';
+			document.getElementById('modal-livro-editora').innerText = livro.editora?.nome ?? 'N/A';
+			document.getElementById('modal-livro-autores').innerText = autores;
+			document.getElementById('modal-livro-preco').innerText = livro.preco ?? '0.00';
+			document.getElementById('modal-livro-bibliografia').innerText = livro.bibliografia ?? '';
+			document.getElementById('modal-livro-capa').src = livro.imagem_capa ?? '';
+
+			document.getElementById('modal-detalhes-livro').checked = true;
+		}
+	</script>
+
 </x-guest-layout>

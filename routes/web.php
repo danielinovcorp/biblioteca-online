@@ -70,3 +70,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::delete('/usuarios/{user}', [AdminUsuarioController::class, 'destroy'])->name('usuarios.destroy');
 });
 
+
+Route::post('/requisicoes/{requisicao}/confirmar-devolucao', [RequisicaoController::class, 'confirmarDevolucao'])
+    ->middleware(['auth']) // ou ['auth', 'is_admin'] se tiver
+    ->name('requisicoes.confirmar-devolucao');

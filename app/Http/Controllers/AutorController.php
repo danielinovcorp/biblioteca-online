@@ -9,89 +9,90 @@ use App\Exports\AutoresExport;
 
 class AutorController extends Controller
 {
-    public function index(Request $request)
-    {
-        $sortField = $request->input('sort', 'nome');
-        $sortDirection = $request->input('direction', 'asc');
+	public function index(Request $request)
+	{
+		$sortField = $request->input('sort', 'nome');
+		$sortDirection = $request->input('direction', 'asc');
 
-        $query = Autor::query();
+		$query = Autor::with(['livros.editora', 'livros.autores']);
 
-        if ($request->filled('q')) {
-            $query->where('nome', 'like', '%' . $request->input('q') . '%');
-        }
+		if ($request->filled('q')) {
+			$query->where('nome', 'like', '%' . $request->input('q') . '%');
+		}
 
-        $autores = $query->orderBy($sortField, $sortDirection)->get();
+		$autores = $query->orderBy($sortField, $sortDirection)->get();
 
-        return view('autores.index', compact('autores', 'sortField', 'sortDirection'));
-    }
+		return view('autores.index', compact('autores', 'sortField', 'sortDirection'));
+	}
 
-    public function export(Request $request)
-    {
-        $ids = explode(',', $request->input('ids'));
-        $q = $request->input('q');
-        $sortField = $request->input('sort', 'nome');
 
-        $sortDirection = strtolower($request->input('direction', 'asc'));
-        $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'asc';
+	public function export(Request $request)
+	{
+		$ids = explode(',', $request->input('ids'));
+		$q = $request->input('q');
+		$sortField = $request->input('sort', 'nome');
 
-        $query = Autor::query();
+		$sortDirection = strtolower($request->input('direction', 'asc'));
+		$sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'asc';
 
-        if (!empty($ids) && $ids[0] !== '') {
-            $query->whereIn('id', $ids);
-        } elseif ($q) {
-            $query->where('nome', 'like', '%' . $q . '%');
-        }
+		$query = Autor::query();
 
-        $autores = $query->orderBy($sortField, $sortDirection)->get();
+		if (!empty($ids) && $ids[0] !== '') {
+			$query->whereIn('id', $ids);
+		} elseif ($q) {
+			$query->where('nome', 'like', '%' . $q . '%');
+		}
 
-        return Excel::download(new AutoresExport($autores->pluck('id')->toArray()), 'autores.xlsx');
-    }
+		$autores = $query->orderBy($sortField, $sortDirection)->get();
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'nome' => 'required|string|max:255',
-            'foto' => 'nullable|image|max:2048',
-        ]);
+		return Excel::download(new AutoresExport($autores->pluck('id')->toArray()), 'autores.xlsx');
+	}
 
-        $autor = new Autor();
-        $autor->nome = $request->nome;
+	public function store(Request $request)
+	{
+		$request->validate([
+			'nome' => 'required|string|max:255',
+			'foto' => 'nullable|image|max:2048',
+		]);
 
-        if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('autores', 'public');
-            $autor->foto = '/storage/' . $path;
-        }
+		$autor = new Autor();
+		$autor->nome = $request->nome;
 
-        $autor->save();
+		if ($request->hasFile('foto')) {
+			$path = $request->file('foto')->store('autores', 'public');
+			$autor->foto = '/storage/' . $path;
+		}
 
-        return redirect()->route('autores.index')->with('success', 'Autor adicionado com sucesso!');
-    }
+		$autor->save();
 
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'nome' => 'required|string|max:255',
-            'foto' => 'nullable|image|max:2048',
-        ]);
+		return redirect()->route('autores.index')->with('success', 'Autor adicionado com sucesso!');
+	}
 
-        $autor = Autor::findOrFail($id);
-        $autor->nome = $request->nome;
+	public function update(Request $request, $id)
+	{
+		$request->validate([
+			'nome' => 'required|string|max:255',
+			'foto' => 'nullable|image|max:2048',
+		]);
 
-        if ($request->hasFile('foto')) {
-            $path = $request->file('foto')->store('autores', 'public');
-            $autor->foto = '/storage/' . $path;
-        }
+		$autor = Autor::findOrFail($id);
+		$autor->nome = $request->nome;
 
-        $autor->save();
+		if ($request->hasFile('foto')) {
+			$path = $request->file('foto')->store('autores', 'public');
+			$autor->foto = '/storage/' . $path;
+		}
 
-        return redirect()->route('autores.index')->with('success', 'Autor atualizado com sucesso!');
-    }
+		$autor->save();
 
-    public function destroy($id)
-    {
-        $autor = Autor::findOrFail($id);
-        $autor->delete();
+		return redirect()->route('autores.index')->with('success', 'Autor atualizado com sucesso!');
+	}
 
-        return redirect()->route('autores.index')->with('success', 'Autor excluído com sucesso!');
-    }
+	public function destroy($id)
+	{
+		$autor = Autor::findOrFail($id);
+		$autor->delete();
+
+		return redirect()->route('autores.index')->with('success', 'Autor excluído com sucesso!');
+	}
 }
