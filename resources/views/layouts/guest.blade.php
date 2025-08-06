@@ -108,21 +108,41 @@
 
 	<!-- SIDEBAR FIXA COM ÍCONES GRANDES -->
 	@auth
-	<div class="fixed top-0 left-0 h-screen w-20 bg-gray-800 text-white z-50 flex flex-col items-center py-6">
-		<div class="mt-48 flex flex-col space-y-8">
-			<a href="{{ route('dashboard') }}" class="text-3xl" title="Dashboard"><i class="fas fa-home"></i></a>
-			<a href="{{ route('livros.index') }}" class="text-3xl" title="Livros"><i class="fas fa-book"></i></a>
-			<a href="{{ route('autores.index') }}" class="text-3xl" title="Autores"><i class="fas fa-user"></i></a>
-			<a href="{{ route('editoras.index') }}" class="text-3xl" title="Editoras"><i class="fas fa-building"></i></a>
-			<a href="{{ route('requisicoes.index') }}" class="text-3xl" title="Requisições"><i class="fas fa-file-alt"></i></a>
+	<div class="fixed top-0 left-0 h-screen w-20 bg-gray-800 z-50 flex flex-col items-center py-6">
+		<div class="mt-48 flex flex-col space-y-6">
 
+			{{-- DASHBOARD --}}
+			<x-sidebar-link
+				href="{{ route('dashboard') }}"
+				:active="request()->routeIs('dashboard')"
+				icon="fas fa-cogs"
+				title="Dashboard" />
+
+			{{-- REQUISIÇÕES --}}
+			<x-sidebar-link
+				href="{{ route('requisicoes.index') }}"
+				:active="request()->routeIs('requisicoes.*')"
+				icon="fas fa-book"
+				title="Requisições" />
+
+			{{-- SOMENTE PARA ADMIN --}}
 			@if (Auth::user()->role === 'admin')
-			<a href="{{ route('admin.usuarios.index') }}" class="text-3xl" title="Usuários"><i class="fas fa-users"></i></a>
+			<x-sidebar-link
+				href="{{ route('livros.importar') }}"
+				:active="request()->routeIs('livros.importar')"
+				icon="fas fa-download"
+				title="Importar Livros" />
+
+			<x-sidebar-link
+				href="{{ route('admin.usuarios.index') }}"
+				:active="request()->routeIs('admin.usuarios.*')"
+				icon="fas fa-users"
+				title="Usuários" />
 			@endif
 		</div>
 	</div>
-
 	@endauth
+
 
 
 	<!-- HEADER -->
