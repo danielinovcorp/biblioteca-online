@@ -40,6 +40,9 @@
 							<x-nav-link href="{{ route('editoras.index') }}" :active="request()->routeIs('editoras.*')">Editoras</x-nav-link>
 							@auth
 							<x-nav-link href="{{ route('requisicoes.index') }}" :active="request()->routeIs('requisicoes.*')">Requisições</x-nav-link>
+							@if(auth()->user()->isAdmin())
+							<x-nav-link href="{{ route('admin.reviews.index') }}" :active="request()->routeIs('admin.reviews.*')">Reviews</x-nav-link>
+							@endif
 							@endauth
 						</div>
 					</div>
@@ -233,6 +236,35 @@
 		</div>
 	</footer>
 
+	{{-- FLASH MESSAGES (DaisyUI) --}}
+	@if (session('success') || session('error') || session('info'))
+	<div class="toast toast-top toast-end z-50">
+		@if (session('success'))
+		<div class="alert alert-success">
+			<span>{{ session('success') }}</span>
+		</div>
+		@endif
+		@if (session('info'))
+		<div class="alert alert-info">
+			<span>{{ session('info') }}</span>
+		</div>
+		@endif
+		@if (session('error'))
+		<div class="alert alert-error">
+			<span>{{ session('error') }}</span>
+		</div>
+		@endif
+	</div>
+
+	<script>
+		// some auto-hide
+		setTimeout(() => {
+			document.querySelectorAll('.toast').forEach(t => t.remove());
+		}, 4000);
+	</script>
+	@endif
+
+	<!-- Livewire Scripts -->
 	@livewireScripts
 </body>
 

@@ -9,7 +9,7 @@
 			{{-- BOTÃO DE NOVO --}}
 			<div class="flex justify-between items-end px-6 mb-4">
 				<form method="GET" action="{{ route('admin.usuarios.index') }}" class="flex gap-4">
-					<select name="role" class="select select-bordered bg-gray-100 text-gray-900">
+					<select name="role" class="select select-bordered border border-gray-300 bg-white">
 						<option value="">Todos os Perfis</option>
 						<option value="admin" @selected(request('role')==='admin' )>Admin</option>
 						<option value="cidadao" @selected(request('role')==='cidadao' )>Cidadão</option>

@@ -2,21 +2,26 @@
 
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
+use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\LivrosExport;
+use App\Http\Middleware\IsAdmin;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LivroController;
 use App\Http\Controllers\AutorController;
 use App\Http\Controllers\EditoraController;
-use App\Exports\LivrosExport;
-use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Http\Request;
 use App\Http\Controllers\RequisicaoController;
 use App\Http\Controllers\AdminUsuarioController;
 use App\Http\Controllers\LivroImportController;
-use App\Http\Middleware\IsAdmin;
-
-
+use App\Http\Controllers\Admin\ReviewAdminController;
+use App\Http\Controllers\ReviewController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Listar reviews ativas (JSON)
+Route::get('livros/{livro}/reviews', [ReviewController::class, 'listAtivos'])
+	->whereNumber('livro')
+	->name('reviews.ativos');
 
 Route::resource('livros', LivroController::class)->except(['show']);
 Route::resource('autores', AutorController::class)->except(['show']);
@@ -46,7 +51,7 @@ Route::middleware(['auth'])->group(function () {
 	Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
 
 Route::middleware([
 	'auth:sanctum',
@@ -62,6 +67,9 @@ Route::middleware(['auth'])->group(function () {
 	Route::get('/requisicoes', [RequisicaoController::class, 'index'])->name('requisicoes.index');
 	Route::get('/requisicoes/criar', [RequisicaoController::class, 'create'])->name('requisicoes.create');
 	Route::post('/requisicoes', [RequisicaoController::class, 'store'])->name('requisicoes.store');
+
+	Route::post('/livros/alertar-disponibilidade', [LivroController::class, 'alertarDisponibilidade'])
+		->name('livros.alertar-disponibilidade');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
@@ -83,4 +91,20 @@ Route::middleware(['auth', IsAdmin::class])->group(function () {
 	Route::post('/importar-livros/salvar', [LivroImportController::class, 'salvar'])->name('livros.importar.salvar');
 });
 
+Route::middleware(['auth', IsAdmin::class])
+	->prefix('admin')->name('admin.')
+	->group(function () {
+		Route::get('/reviews', [ReviewAdminController::class, 'index'])->name('reviews.index');
+		Route::get('/reviews/{review}', [ReviewAdminController::class, 'show'])->name('reviews.show');
+		Route::patch('/reviews/{review}/status', [ReviewAdminController::class, 'updateStatus'])->name('reviews.updateStatus');
+	});
 
+// Criar review (cidadão dono da requisição já devolvida)
+Route::post('/requisicoes/{requisicao}/reviews', [ReviewController::class, 'store'])
+	->middleware(['auth'])
+	->name('reviews.store');
+
+// Rota para obter as MINHAS devoluções de um livro (para o formulário de review)
+Route::get('/livros/{livro}/minhas-devolucoes', [RequisicaoController::class, 'minhasDevolvidasPorLivro'])
+	->middleware('auth')  // só logado
+	->name('livros.minhas-devolucoes');

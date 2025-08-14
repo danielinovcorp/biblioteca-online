@@ -8,6 +8,9 @@ use App\Models\Editora;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\LivrosExport;
+use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use App\Models\AlertaDisponibilidade;
 
 class LivroController extends Controller
 {
@@ -120,5 +123,31 @@ class LivroController extends Controller
 		$requisicoes = $livro->requisicoes()->latest()->get();
 
 		return view('livros.show', compact('livro', 'requisicoes'));
+	}
+
+	public function alertarDisponibilidade(Request $request)
+	{
+		$request->validate([
+			'livro_id' => 'required|exists:livros,id',
+		]);
+
+		$livroId = (int) $request->input('livro_id');
+		$userId  = auth()->id();
+
+		// Evitar duplicado
+		$jaExiste = \App\Models\AlertaDisponibilidade::where('user_id', $userId)
+			->where('livro_id', $livroId)
+			->exists();
+
+		if ($jaExiste) {
+			return back()->with('info', 'Você já será avisado quando este livro ficar disponível.');
+		}
+
+		\App\Models\AlertaDisponibilidade::create([
+			'user_id' => $userId,
+			'livro_id' => $livroId,
+		]);
+
+		return back()->with('success', 'Tudo certo! Vamos avisar por e-mail quando o livro ficar disponível.');
 	}
 }

@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Mail\RequisicaoConfirmada;
 use Illuminate\Support\Facades\Mail;
+use App\Models\AlertaDisponibilidade;
+use App\Mail\LivroDisponivelMail;
 
 class RequisicaoController extends Controller
 {
@@ -144,11 +146,85 @@ class RequisicaoController extends Controller
 
 	public function confirmarDevolucao(Requisicao $requisicao)
 	{
-		// Atualiza o status para 'devolvida' e registra a data de devolução
-		$requisicao->status = 'devolvida';
-		$requisicao->data_fim_real = now();
-		$requisicao->save();
+		DB::beginTransaction();
 
-		return redirect()->route('requisicoes.index')->with('success', 'Devolução confirmada com sucesso.');
+		try {
+			// 1) Atualiza a requisição
+			$requisicao->update([
+				'status'        => 'devolvida',
+				'data_fim_real' => now(),
+			]);
+
+			// 2) Marca o livro como disponível (se existir)
+			$livro = $requisicao->livro; // pode ser null
+			if ($livro && array_key_exists('disponivel', $livro->getAttributes())) {
+				$livro->update(['disponivel' => true]);
+			}
+
+			// 3) Busca alertas somente se houver livro
+			$alertas = collect();
+			if ($livro && $livro->id) {
+				$alertas = AlertaDisponibilidade::with('user:id,email')
+					->where('livro_id', $livro->id)
+					->get();
+			}
+
+			// Confirma alterações no banco ANTES dos e-mails
+			DB::commit();
+
+			// 4) Envia e-mails e remove alertas (fora da transação)
+			$enviados = 0;
+			foreach ($alertas as $alerta) {
+				try {
+					if ($alerta->user && $alerta->user->email) {
+						// tenta enfileirar
+						Mail::to($alerta->user->email)->queue(new LivroDisponivelMail($livro));
+						$enviados++;
+					}
+				} catch (\Throwable $mailEx) {
+					// fallback para envio síncrono se a fila não estiver OK
+					report($mailEx);
+					try {
+						if ($alerta->user && $alerta->user->email) {
+							Mail::to($alerta->user->email)->send(new LivroDisponivelMail($livro));
+							$enviados++;
+						}
+					} catch (\Throwable $mailEx2) {
+						// se nem assim rolar, apenas reporta e segue
+						report($mailEx2);
+					}
+				} finally {
+					// remove o alerta para não reenviar no futuro
+					$alerta->delete();
+				}
+			}
+
+			$msg = $alertas->count()
+				? "Devolução confirmada. {$enviados} alerta(s) processado(s) por e-mail."
+				: 'Devolução confirmada. (Sem alertas pendentes para este livro.)';
+
+			return redirect()->route('requisicoes.index')->with('success', $msg);
+		} catch (\Throwable $e) {
+			DB::rollBack();
+			report($e);
+			return back()->with('error', 'Não foi possível confirmar a devolução. Tente novamente.');
+		}
+	}
+
+	public function minhasDevolvidasPorLivro(\App\Models\Livro $livro)
+	{
+		$user = Auth::user();
+		if (!$user) {
+			return response()->json([], 401);
+		}
+
+		$requisicoes = Requisicao::query()
+			->where('user_id', $user->id)
+			->where('livro_id', $livro->id)
+			->where('status', 'devolvida')
+			->orderByDesc('data_fim_real')
+			->get(['id', 'numero', 'data_fim_real']);
+
+		return response()->json($requisicoes, 200);
 	}
 }
