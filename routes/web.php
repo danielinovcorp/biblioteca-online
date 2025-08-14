@@ -15,13 +15,44 @@ use App\Http\Controllers\AdminUsuarioController;
 use App\Http\Controllers\LivroImportController;
 use App\Http\Controllers\Admin\ReviewAdminController;
 use App\Http\Controllers\ReviewController;
+use App\Models\Livro;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// Livros relacionados (JSON) p/ modal da index
+Route::get('livros/{livro}/relacionados', function (Livro $livro) {
+	// related(8) deve devolver uma Eloquent Collection de modelos Livro
+	$itens = $livro->related(8)->load(['editora', 'autores']);
+
+	return response()->json(
+		$itens->map(function ($l) {
+			return [
+				'id'           => $l->id,
+				'nome'         => $l->nome,
+				'isbn'         => $l->isbn,
+				'imagem_capa'  => $l->imagem_capa,
+				// string simples; o front já normaliza para {nome: ...}
+				'editora'      => optional($l->editora)->nome,
+				// autores no shape [{id, nome}]
+				'autores'      => $l->autores->map(fn($a) => ['id' => $a->id, 'nome' => $a->nome])->values(),
+				'preco'        => (float) $l->preco,
+				'bibliografia' => $l->bibliografia,
+				'disponivel'   => (bool) $l->disponivel,
+
+				// NÃO envie 'url' aqui (Opção B não navega)
+			];
+		})->values()
+	);
+})->whereNumber('livro')->name('livros.relacionados');
+
 
 // Listar reviews ativas (JSON)
 Route::get('livros/{livro}/reviews', [ReviewController::class, 'listAtivos'])
 	->whereNumber('livro')
 	->name('reviews.ativos');
+
+Route::get('livros/{livro}', [LivroController::class, 'show'])
+	->name('livros.show');
 
 Route::resource('livros', LivroController::class)->except(['show']);
 Route::resource('autores', AutorController::class)->except(['show']);
@@ -108,3 +139,5 @@ Route::post('/requisicoes/{requisicao}/reviews', [ReviewController::class, 'stor
 Route::get('/livros/{livro}/minhas-devolucoes', [RequisicaoController::class, 'minhasDevolvidasPorLivro'])
 	->middleware('auth')  // só logado
 	->name('livros.minhas-devolucoes');
+
+	

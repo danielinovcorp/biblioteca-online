@@ -105,7 +105,7 @@
 								@endforeach
 							</td>
 
-							<td>{{ $livro->editora->nome }}</td>
+							<td>{{ $livro->editora?->nome }}</td>
 							<td>€ {{ number_format($livro->preco, 2, ',', '.') }}</td>
 
 							<td>
@@ -191,15 +191,31 @@
 					<p class="text-gray-500 italic">Clique em "Reviews" para exibir.</p>
 				</div>
 			</div>
+
+			{{-- Relacionados --}}
+			<section id="wrap-relacionados" class="mt-10" aria-labelledby="relacionados-title">
+				<h4 id="relacionados-title" class="text-lg font-semibold mb-2">📚 Livros relacionados</h4>
+				<div id="relacionados-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+					<div class="opacity-60">Carregando…</div>
+				</div>
+			</section>
 		</div>
 	</div>
 
 	{{-- Injeta usuário logado no window (sem chamar /api/user) --}}
 	@auth
 	<script>
-		window.AUTH_ID        = {{ auth()->id() }};
-		window.AUTH_ROLE      = "{{ auth()->user()->tipo }}"; // pode ser 'admin', 'cidadao' ou outro
-		window.AUTH_IS_ADMIN  = {{ auth()->user()->isAdmin() ? 'true' : 'false' }};
+		window.AUTH_ID = {
+			{
+				auth() - > id() ?? 'null'
+			}
+		};
+		window.AUTH_ROLE = "{{ auth()->user()->tipo ?? '' }}";
+		window.AUTH_IS_ADMIN = {
+			{
+				auth() - > check() && auth() - > user() - > isAdmin() ? 'true' : 'false'
+			}
+		};
 	</script>
 	@else
 	<script>
@@ -216,45 +232,93 @@
 		let LIVRO_ATUAL = null;
 
 		// ====== Abrir modal e preencher campos ======
-		function mostrarLivro(livro) {
-			const autores = Array.isArray(livro.autores) ?
-				livro.autores.map(a => a.nome).join(', ') :
-				(livro.autores ?? '');
+		function normalizarLivro(data) {
+			if (!data || typeof data !== 'object') return {};
 
-			document.getElementById('modal-livro-nome').innerText = livro.nome;
-			document.getElementById('modal-livro-isbn').innerText = livro.isbn ?? 'N/A';
-			document.getElementById('modal-livro-editora').innerText = livro.editora?.nome ?? 'N/A';
-			document.getElementById('modal-livro-autores').innerText = autores || '—';
-			document.getElementById('modal-livro-preco').innerText = livro.preco ?? '0.00';
+			// Normaliza editora:
+			// - se vier "editora: 'Nome da Editora'" no JSON dos relacionados,
+			//   transformamos em { nome: 'Nome da Editora' }
+			let editoraObj = null;
+			if (data.editora && typeof data.editora === 'object') {
+				editoraObj = data.editora; // já está no shape {nome: ...}
+			} else if (typeof data.editora === 'string') {
+				editoraObj = {
+					nome: data.editora
+				};
+			}
+
+			// Normaliza autores:
+			// - garantir array de {id, nome}
+			let autoresArr = [];
+			if (Array.isArray(data.autores)) {
+				autoresArr = data.autores.map(a => {
+					if (typeof a === 'string') return {
+						id: null,
+						nome: a
+					};
+					return {
+						id: a.id ?? null,
+						nome: a.nome ?? ''
+					};
+				});
+			}
+
+			return {
+				id: data.id ?? null,
+				nome: data.nome ?? '',
+				isbn: data.isbn ?? '',
+				editora: editoraObj,
+				autores: autoresArr,
+				preco: (data.preco ?? 0),
+				disponivel: !!data.disponivel,
+				bibliografia: data.bibliografia ?? '',
+				imagem_capa: data.imagem_capa ?? '',
+				// alguns endpoints podem não trazer requisicoes; tudo bem ficar vazio
+				requisicoes: Array.isArray(data.requisicoes) ? data.requisicoes : [],
+			};
+		}
+
+		// ===== Principal: abre/preenche modal e carrega relacionados =====
+		async function mostrarLivro(livroRaw) {
+			// 1) Normaliza o objeto recebido (tanto da lista quanto dos relacionados)
+			const livro = normalizarLivro(livroRaw);
+
+			// 2) Campos básicos
+			const autoresTxt = livro.autores.map(a => a.nome).join(', ');
+			document.getElementById('modal-livro-nome').innerText = livro.nome || '—';
+			document.getElementById('modal-livro-isbn').innerText = livro.isbn || 'N/A';
+			document.getElementById('modal-livro-editora').innerText = livro.editora?.nome || 'N/A';
+			document.getElementById('modal-livro-autores').innerText = autoresTxt || '—';
+			document.getElementById('modal-livro-preco').innerText = (Number(livro.preco) || 0).toFixed(2);
 			document.getElementById('modal-livro-disponivel').innerText = livro.disponivel ? 'Sim' : 'Não';
-			document.getElementById('modal-livro-bibliografia').innerText = livro.bibliografia ?? '';
-			document.getElementById('modal-livro-capa').src = livro.imagem_capa ?? '';
+			document.getElementById('modal-livro-bibliografia').innerText = livro.bibliografia || '';
+			document.getElementById('modal-livro-capa').src = livro.imagem_capa || '';
 
-			// ID do livro para os formulários
+			// 3) Formulários (Solicitar / Avise-me)
 			const inputLivroId = document.getElementById('input-livro-id');
 			if (inputLivroId) inputLivroId.value = livro.id;
 
-			// mostrar/esconder "Solicitar"
 			const formRequisitar = document.getElementById('form-requisitar-livro');
 			if (formRequisitar) {
 				if (livro.disponivel) formRequisitar.classList.remove('hidden');
 				else formRequisitar.classList.add('hidden');
 			}
 
-			// alerta de disponibilidade
 			const formAlerta = document.getElementById('form-alerta-disponibilidade');
 			const inputAlerta = document.getElementById('input-livro-id-alerta');
-			if (livro.disponivel) {
-				formAlerta?.classList.add('hidden');
-			} else {
-				formAlerta?.classList.remove('hidden');
-				if (inputAlerta) inputAlerta.value = livro.id;
+			if (formAlerta) {
+				if (livro.disponivel) {
+					formAlerta.classList.add('hidden');
+				} else {
+					formAlerta.classList.remove('hidden');
+					if (inputAlerta) inputAlerta.value = livro.id;
+				}
 			}
 
-			// guarda estado
+			// 4) Guarda estado global
 			LIVRO_ATUAL = livro;
 
-			// reset áreas
+			// 5) Reset das áreas internas (histórico/reviews)
 			document.getElementById('wrap-historico')?.classList.add('hidden');
 			document.getElementById('wrap-reviews')?.classList.add('hidden');
 
@@ -263,16 +327,68 @@
 				historicoContainer.innerHTML = `<p class="text-gray-500 italic">Clique em "Histórico" para exibir.</p>`;
 				historicoContainer.dataset.filled = '0';
 			}
+
 			const reviewsContainer = document.getElementById('reviews-container');
 			if (reviewsContainer) {
 				reviewsContainer.innerHTML = `<p class="text-gray-500 italic">Clique em "Reviews" para exibir.</p>`;
 				reviewsContainer.dataset.filled = '0';
 			}
 
-			// abrir modal
+			// 6) Abre o modal
 			document.getElementById('modal-detalhes-livro').checked = true;
 			document.getElementById('input-livro-id').value = livro.id;
 			sessionStorage.setItem('livro_id_requisicao', livro.id);
+
+			// 7) Carrega relacionados (sem navegar, reabre o modal no clique)
+			const target = document.getElementById('relacionados-container');
+			if (!target) return;
+
+			target.innerHTML = `<div class="opacity-60">Carregando…</div>`;
+			try {
+				const res = await fetch(`/livros/${livro.id}/relacionados`, {
+					headers: {
+						'Accept': 'application/json'
+					}
+				});
+				const items = res.ok ? await res.json() : [];
+
+				if (!items.length) {
+					target.innerHTML = `<div class="opacity-60">Sem sugestões no momento.</div>`;
+					return;
+				}
+
+				// Monta cartões SEM data-url (não navegamos)
+				target.innerHTML = items.map((it, idx) => `
+				<div class="card bg-base-100 shadow hover:shadow-lg transition cursor-pointer" data-idx="${idx}">
+					<figure class="p-3">
+						${it.imagem_capa
+							? `<img src="${it.imagem_capa}" alt="${it.nome}" class="h-40 w-auto object-contain">`
+							: `<div class="h-40 w-full flex items-center justify-center bg-base-200 text-base-content/60">
+									<i class="fas fa-book text-4xl"></i>
+							   </div>`}
+					</figure>
+					<div class="card-body p-4">
+						<h3 class="card-title text-sm line-clamp-2">${it.nome}</h3>
+						${it.editora ? `<p class="text-xs text-base-content/70">${it.editora}</p>` : ''}
+						<div class="card-actions justify-end mt-2">
+							<span class="btn btn-ghost btn-xs">Abrir detalhes</span>
+						</div>
+					</div>
+				</div>
+			`).join('');
+
+				// Clique: reabrir o modal com o item normalizado (sem mudar de página)
+				target.querySelectorAll('.card[data-idx]').forEach(card => {
+					card.addEventListener('click', () => {
+						const idx = Number(card.dataset.idx);
+						const item = items[idx];
+						// Normaliza e reaproveita a MESMA função
+						mostrarLivro(item);
+					});
+				});
+			} catch (e) {
+				target.innerHTML = `<div class="alert alert-error">Erro ao carregar relacionados.</div>`;
+			}
 		}
 
 		// ====== Toggles ======

@@ -118,11 +118,16 @@ class LivroController extends Controller
 
 	public function show(Livro $livro)
 	{
+		// mantém teus eager-loads
 		$livro->load(['editora', 'autores', 'requisicoes.user']);
 
+		// pega as requisições do livro
 		$requisicoes = $livro->requisicoes()->latest()->get();
 
-		return view('livros.show', compact('livro', 'requisicoes'));
+		// 👇 NOVO: livros relacionados (carrega editora para o card)
+		$relacionados = $livro->related(8)->load(['editora']);
+
+		return view('livros.show', compact('livro', 'requisicoes', 'relacionados'));
 	}
 
 	public function alertarDisponibilidade(Request $request)
@@ -135,7 +140,7 @@ class LivroController extends Controller
 		$userId  = auth()->id();
 
 		// Evitar duplicado
-		$jaExiste = \App\Models\AlertaDisponibilidade::where('user_id', $userId)
+		$jaExiste = AlertaDisponibilidade::where('user_id', $userId)
 			->where('livro_id', $livroId)
 			->exists();
 
@@ -143,11 +148,33 @@ class LivroController extends Controller
 			return back()->with('info', 'Você já será avisado quando este livro ficar disponível.');
 		}
 
-		\App\Models\AlertaDisponibilidade::create([
+		AlertaDisponibilidade::create([
 			'user_id' => $userId,
 			'livro_id' => $livroId,
 		]);
 
 		return back()->with('success', 'Tudo certo! Vamos avisar por e-mail quando o livro ficar disponível.');
+	}
+
+	public function relacionadosJson(Livro $livro)
+	{
+		$rel = $livro->related(8)->load('editora');
+
+		return response()->json(
+			$rel->map(function ($x) {
+				return [
+					'id'           => $x->id,
+					'nome'         => $x->nome,
+					'isbn'         => $x->isbn,
+					'imagem_capa'  => $x->imagem_capa,
+					'editora'      => optional($x->editora)->nome,
+					'autores'      => $x->autores()->orderBy('nome')->get(['id', 'nome']),
+					'preco'        => $x->preco,
+					'bibliografia' => $x->bibliografia,
+					'disponivel'   => (bool) $x->disponivel,
+					'url'          => null,
+				];
+			})
+		);
 	}
 }
