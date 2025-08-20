@@ -4,9 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
-
 
 class Livro extends Model
 {
@@ -21,11 +18,13 @@ class Livro extends Model
 		'bibliografia',
 		'imagem_capa',
 		'preco',
-		'disponivel',
+		// REMOVIDO: 'disponivel' (não existe coluna no BD)
 	];
 
-	protected $appends = ['disponivel'];
+	// Anexamos os atributos virtuais ao JSON/array
+	protected $appends = ['disponivel', 'disponivel_label'];
 
+	// Relações
 	public function editora()
 	{
 		return $this->belongsTo(Editora::class);
@@ -40,16 +39,10 @@ class Livro extends Model
 	{
 		return $this->hasMany(Requisicao::class);
 	}
+
 	public function reviews()
 	{
 		return $this->hasMany(Review::class);
-	}
-
-	public function getDisponivelAttribute()
-	{
-		return !$this->requisicoes()
-			->where('status', 'ativa')
-			->exists();
 	}
 
 	public function alertas()
@@ -62,6 +55,43 @@ class Livro extends Model
 		return $this->hasMany(LivroKeyword::class);
 	}
 
+	/**
+	 * ATRIBUTO VIRTUAL: disponivel (bool)
+	 * Verdadeiro quando NÃO há requisição ativa (sem devolução) para este livro.
+	 */
+	public function getDisponivelAttribute(): bool
+	{
+		// Se a relação já foi carregada (load/eager load), usamos a coleção em memória
+		if ($this->relationLoaded('requisicoes')) {
+			$emAberto = $this->requisicoes->contains(function ($r) {
+				$status = strtolower((string) ($r->status ?? '')); // lida com null/strings
+				return is_null($r->data_devolucao)
+					&& !in_array($status, ['devolvida', 'cancelada'], true);
+			});
+			return !$emAberto;
+		}
+
+		// Caso contrário, consultamos o BD
+		$emAberto = $this->requisicoes()
+			->whereNull('data_devolucao')
+			->whereNotIn('status', ['devolvida', 'cancelada']) // seguro mesmo se status existir
+			->exists();
+
+		return !$emAberto;
+	}
+
+	/**
+	 * ATRIBUTO VIRTUAL: disponivel_label ("Sim"/"Não")
+	 * Útil para badges na UI sem quebrar a lógica booleana.
+	 */
+	public function getDisponivelLabelAttribute(): string
+	{
+		return $this->disponivel ? 'Sim' : 'Não';
+	}
+
+	/**
+	 * Livros relacionados por keywords (com fallbacks).
+	 */
 	public function related(int $limit = 8)
 	{
 		// 1) Pega até 15 keywords mais "fortes" do livro
@@ -71,10 +101,10 @@ class Livro extends Model
 			->pluck('keyword')
 			->toArray();
 
-		// Fallback 0: se o livro ainda não tem keywords indexadas,
-		// mostra os mais recentes (diferentes dele) e sai.
+		// Fallback 0: se o livro ainda não tem keywords, mostra os mais recentes (diferentes dele)
 		if (empty($kw)) {
 			return static::where('id', '<>', $this->id)
+				->with('editora')
 				->latest('updated_at')
 				->limit($limit)
 				->get();
@@ -90,14 +120,12 @@ class Livro extends Model
 			->limit($limit)
 			->get();
 
-		// 3) Se não houver matches por keywords, tenta um fallback "semântico simples":
-		//   - mesmo(s) autor(es)
-		//   - mesma editora
+		// 3) Fallback semântico simples (mesmo(s) autor(es) e/ou mesma editora)
 		if ($rows->isEmpty()) {
 			$query = static::query()->where('id', '<>', $this->id);
 
-			// mesmo(s) autores
-			$autorIds = $this->autores()->pluck('autors.id'); // tabela pivot padrão "autor_livro" → "autors"
+			// mesmos autores
+			$autorIds = $this->autores()->pluck('autors.id');
 			if ($autorIds->isNotEmpty()) {
 				$query->orWhereHas('autores', function ($q) use ($autorIds) {
 					$q->whereIn('autors.id', $autorIds);
@@ -109,7 +137,6 @@ class Livro extends Model
 				$query->orWhere('editora_id', $this->editora_id);
 			}
 
-			// Se mesmo assim não houver, volta os mais recentes (robusto)
 			$fallback = $query->with('editora')
 				->latest('updated_at')
 				->limit($limit)
@@ -127,7 +154,6 @@ class Livro extends Model
 		// 4) Constrói a ordem pelos IDs encontrados preservando ranking
 		$ids = $rows->pluck('livro_id')->map(fn($v) => (int) $v)->all();
 
-		// Em MySQL/MariaDB o FIELD funciona; se estiveres em SQLite, usa CASE WHEN:
 		if (\DB::getDriverName() === 'sqlite') {
 			$cases = collect($ids)->map(fn($id, $i) => "WHEN id = {$id} THEN {$i}")->implode(' ');
 			$orderRaw = "CASE {$cases} END";
@@ -135,7 +161,7 @@ class Livro extends Model
 			$orderRaw = 'FIELD(id,' . implode(',', $ids) . ')';
 		}
 
-		// 5) Retorna SEMPRE uma Eloquent\Collection (mesmo se vazia)
+		// 5) Retorna uma Eloquent\Collection ordenada
 		return static::whereIn('id', $ids)
 			->with('editora')
 			->orderByRaw($orderRaw)

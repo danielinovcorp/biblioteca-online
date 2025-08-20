@@ -6,9 +6,8 @@ use App\Models\Livro;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
-class LivroDisponivelMail extends Mailable implements ShouldQueue
+class LivroDisponivelMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -16,6 +15,7 @@ class LivroDisponivelMail extends Mailable implements ShouldQueue
 
     public function __construct(Livro $livro)
     {
+        $livro->loadMissing('editora');
         $this->livro = $livro;
     }
 
@@ -30,9 +30,7 @@ class LivroDisponivelMail extends Mailable implements ShouldQueue
     {
         return new \Illuminate\Mail\Mailables\Content(
             markdown: 'emails.livros.disponivel',
-            with: [
-                'livro' => $this->livro,
-            ],
+            with: ['livro' => $this->livro],
         );
     }
 
