@@ -19,6 +19,10 @@ use App\Models\Livro;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+/**
+ * LIVROS – rotas específicas ANTES da genérica
+ */
+
 // Livros relacionados (JSON) p/ modal da index
 Route::get('livros/{livro}/relacionados', function (Livro $livro) {
 	// related(8) deve devolver uma Eloquent Collection de modelos Livro
@@ -45,19 +49,32 @@ Route::get('livros/{livro}/relacionados', function (Livro $livro) {
 	);
 })->whereNumber('livro')->name('livros.relacionados');
 
-
 // Listar reviews ativas (JSON)
 Route::get('livros/{livro}/reviews', [ReviewController::class, 'listAtivos'])
 	->whereNumber('livro')
 	->name('reviews.ativos');
 
+// Rota para obter as MINHAS devoluções de um livro (para o formulário de review)
+Route::get('/livros/{livro}/minhas-devolucoes', [RequisicaoController::class, 'minhasDevolvidasPorLivro'])
+	->middleware('auth')  // só logado
+	->whereNumber('livro')
+	->name('livros.minhas-devolucoes');
+
+// (Opcional) Detalhe – mantida, mas com constraint para não conflitar com "exportar", etc.
 Route::get('livros/{livro}', [LivroController::class, 'show'])
+	->whereNumber('livro')
 	->name('livros.show');
 
+/**
+ * REST resources
+ */
 Route::resource('livros', LivroController::class)->except(['show']);
 Route::resource('autores', AutorController::class)->except(['show']);
 Route::resource('editoras', EditoraController::class)->except(['show', 'create', 'edit']);
 
+/**
+ * Exportações
+ */
 Route::get('/livros/exportar', function (Request $request) {
 	return Excel::download(new LivrosExport(
 		$request->input('ids'),
@@ -69,7 +86,9 @@ Route::get('/livros/exportar', function (Request $request) {
 Route::get('/autores/export', [AutorController::class, 'export'])->name('autores.export');
 Route::get('/editoras/exportar', [EditoraController::class, 'export'])->name('editoras.export');
 
-
+/**
+ * Dashboard / Auth scaffolding
+ */
 Route::view('dashboard', 'dashboard')
 	->middleware(['auth', 'verified'])
 	->name('dashboard');
@@ -94,6 +113,9 @@ Route::middleware([
 	})->name('dashboard');
 });
 
+/**
+ * Requisições (usuário)
+ */
 Route::middleware(['auth'])->group(function () {
 	Route::get('/requisicoes', [RequisicaoController::class, 'index'])->name('requisicoes.index');
 	Route::get('/requisicoes/criar', [RequisicaoController::class, 'create'])->name('requisicoes.create');
@@ -103,6 +125,9 @@ Route::middleware(['auth'])->group(function () {
 		->name('livros.alertar-disponibilidade');
 });
 
+/**
+ * Área Admin
+ */
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
 	Route::get('/usuarios', [AdminUsuarioController::class, 'index'])->name('usuarios.index');
 	Route::post('/usuarios', [AdminUsuarioController::class, 'store'])->name('usuarios.store');
@@ -110,7 +135,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 	Route::put('/usuarios/{user}', [AdminUsuarioController::class, 'update'])->name('usuarios.update');
 	Route::delete('/usuarios/{user}', [AdminUsuarioController::class, 'destroy'])->name('usuarios.destroy');
 });
-
 
 Route::post('/requisicoes/{requisicao}/confirmar-devolucao', [RequisicaoController::class, 'confirmarDevolucao'])
 	->middleware(['auth']) // ou ['auth', 'is_admin'] se tiver
@@ -130,14 +154,9 @@ Route::middleware(['auth', IsAdmin::class])
 		Route::patch('/reviews/{review}/status', [ReviewAdminController::class, 'updateStatus'])->name('reviews.updateStatus');
 	});
 
-// Criar review (cidadão dono da requisição já devolvida)
+/**
+ * Reviews (cidadão)
+ */
 Route::post('/requisicoes/{requisicao}/reviews', [ReviewController::class, 'store'])
 	->middleware(['auth'])
 	->name('reviews.store');
-
-// Rota para obter as MINHAS devoluções de um livro (para o formulário de review)
-Route::get('/livros/{livro}/minhas-devolucoes', [RequisicaoController::class, 'minhasDevolvidasPorLivro'])
-	->middleware('auth')  // só logado
-	->name('livros.minhas-devolucoes');
-
-	

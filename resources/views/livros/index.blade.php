@@ -50,13 +50,13 @@
 
 			@php
 			function sort_link($field, $label, $currentField, $currentDirection) {
-			$newDirection = ($currentField === $field && $currentDirection === 'asc') ? 'desc' : 'asc';
-			$icon = $currentField === $field ? ($currentDirection === 'asc' ? '▲' : '▼') : '';
-			$query = request()->except(['page', 'sort', 'direction']);
-			$query['sort'] = $field;
-			$query['direction'] = $newDirection;
-			$url = route('livros.index', $query);
-			return "<a href='{$url}' class='hover:underline font-medium'>{$label} {$icon}</a>";
+				$newDirection = ($currentField === $field && $currentDirection === 'asc') ? 'desc' : 'asc';
+				$icon = $currentField === $field ? ($currentDirection === 'asc' ? '▲' : '▼') : '';
+				$query = request()->except(['page', 'sort', 'direction']);
+				$query['sort'] = $field;
+				$query['direction'] = $newDirection;
+				$url = route('livros.index', $query);
+				return "<a href='{$url}' class='hover:underline font-medium'>{$label} {$icon}</a>";
 			}
 			@endphp
 
@@ -205,23 +205,16 @@
 	{{-- Injeta usuário logado no window (sem chamar /api/user) --}}
 	@auth
 	<script>
-		window.AUTH_ID = {
-			{
-				auth() - > id() ?? 'null'
-			}
-		};
-		window.AUTH_ROLE = "{{ auth()->user()->tipo ?? '' }}";
-		window.AUTH_IS_ADMIN = {
-			{
-				auth() - > check() && auth() - > user() - > isAdmin() ? 'true' : 'false'
-			}
-		};
+	  // serializado com segurança para JS
+	  window.AUTH_ID = @json(auth()->id());
+	  window.AUTH_ROLE = @json(optional(auth()->user())->role ?? optional(auth()->user())->tipo);
+	  window.AUTH_IS_ADMIN = @json((optional(auth()->user())->role ?? optional(auth()->user())->tipo) === 'admin');
 	</script>
 	@else
 	<script>
-		window.AUTH_ID = null;
-		window.AUTH_ROLE = null;
-		window.AUTH_IS_ADMIN = false;
+	  window.AUTH_ID = null;
+	  window.AUTH_ROLE = null;
+	  window.AUTH_IS_ADMIN = false;
 	</script>
 	@endauth
 
@@ -235,31 +228,18 @@
 		function normalizarLivro(data) {
 			if (!data || typeof data !== 'object') return {};
 
-			// Normaliza editora:
-			// - se vier "editora: 'Nome da Editora'" no JSON dos relacionados,
-			//   transformamos em { nome: 'Nome da Editora' }
 			let editoraObj = null;
 			if (data.editora && typeof data.editora === 'object') {
-				editoraObj = data.editora; // já está no shape {nome: ...}
+				editoraObj = data.editora;
 			} else if (typeof data.editora === 'string') {
-				editoraObj = {
-					nome: data.editora
-				};
+				editoraObj = { nome: data.editora };
 			}
 
-			// Normaliza autores:
-			// - garantir array de {id, nome}
 			let autoresArr = [];
 			if (Array.isArray(data.autores)) {
 				autoresArr = data.autores.map(a => {
-					if (typeof a === 'string') return {
-						id: null,
-						nome: a
-					};
-					return {
-						id: a.id ?? null,
-						nome: a.nome ?? ''
-					};
+					if (typeof a === 'string') return { id: null, nome: a };
+					return { id: a.id ?? null, nome: a.nome ?? '' };
 				});
 			}
 
@@ -273,17 +253,14 @@
 				disponivel: !!data.disponivel,
 				bibliografia: data.bibliografia ?? '',
 				imagem_capa: data.imagem_capa ?? '',
-				// alguns endpoints podem não trazer requisicoes; tudo bem ficar vazio
 				requisicoes: Array.isArray(data.requisicoes) ? data.requisicoes : [],
 			};
 		}
 
 		// ===== Principal: abre/preenche modal e carrega relacionados =====
 		async function mostrarLivro(livroRaw) {
-			// 1) Normaliza o objeto recebido (tanto da lista quanto dos relacionados)
 			const livro = normalizarLivro(livroRaw);
 
-			// 2) Campos básicos
 			const autoresTxt = livro.autores.map(a => a.nome).join(', ');
 			document.getElementById('modal-livro-nome').innerText = livro.nome || '—';
 			document.getElementById('modal-livro-isbn').innerText = livro.isbn || 'N/A';
@@ -294,7 +271,6 @@
 			document.getElementById('modal-livro-bibliografia').innerText = livro.bibliografia || '';
 			document.getElementById('modal-livro-capa').src = livro.imagem_capa || '';
 
-			// 3) Formulários (Solicitar / Avise-me)
 			const inputLivroId = document.getElementById('input-livro-id');
 			if (inputLivroId) inputLivroId.value = livro.id;
 
@@ -315,10 +291,8 @@
 				}
 			}
 
-			// 4) Guarda estado global
 			LIVRO_ATUAL = livro;
 
-			// 5) Reset das áreas internas (histórico/reviews)
 			document.getElementById('wrap-historico')?.classList.add('hidden');
 			document.getElementById('wrap-reviews')?.classList.add('hidden');
 
@@ -334,21 +308,17 @@
 				reviewsContainer.dataset.filled = '0';
 			}
 
-			// 6) Abre o modal
 			document.getElementById('modal-detalhes-livro').checked = true;
 			document.getElementById('input-livro-id').value = livro.id;
 			sessionStorage.setItem('livro_id_requisicao', livro.id);
 
-			// 7) Carrega relacionados (sem navegar, reabre o modal no clique)
 			const target = document.getElementById('relacionados-container');
 			if (!target) return;
 
 			target.innerHTML = `<div class="opacity-60">Carregando…</div>`;
 			try {
 				const res = await fetch(`/livros/${livro.id}/relacionados`, {
-					headers: {
-						'Accept': 'application/json'
-					}
+					headers: { 'Accept': 'application/json' }
 				});
 				const items = res.ok ? await res.json() : [];
 
@@ -357,7 +327,6 @@
 					return;
 				}
 
-				// Monta cartões SEM data-url (não navegamos)
 				target.innerHTML = items.map((it, idx) => `
 				<div class="card bg-base-100 shadow hover:shadow-lg transition cursor-pointer" data-idx="${idx}">
 					<figure class="p-3">
@@ -377,12 +346,10 @@
 				</div>
 			`).join('');
 
-				// Clique: reabrir o modal com o item normalizado (sem mudar de página)
 				target.querySelectorAll('.card[data-idx]').forEach(card => {
 					card.addEventListener('click', () => {
 						const idx = Number(card.dataset.idx);
 						const item = items[idx];
-						// Normaliza e reaproveita a MESMA função
 						mostrarLivro(item);
 					});
 				});
@@ -487,12 +454,9 @@
 			}
 
 			try {
-				// buscar reviews ATIVAS
+				// 1) Buscar reviews ativas
 				const res = await fetch(`/livros/${livroId}/reviews?t=${Date.now()}`, {
-					headers: {
-						'Accept': 'application/json',
-						'X-Requested-With': 'XMLHttpRequest'
-					}
+					headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
 				});
 				if (!res.ok) {
 					c.innerHTML = `<div class="alert alert-error">Falha ao carregar reviews (HTTP ${res.status})</div>`;
@@ -501,23 +465,26 @@
 				}
 				const reviews = await res.json();
 
-				// === Quem é cidadão? Qualquer logado que NÃO seja admin ===
-				const authId = window.AUTH_ID || null;
-				const ehAdmin = (window.AUTH_IS_ADMIN === true) || (String(window.AUTH_ROLE).toLowerCase() === 'admin');
-				const ehCidadao = !!authId && !ehAdmin;
+				// 2) Está logado?
+				const ehLogado = (window.AUTH_ID != null); // <— alterado para ser robusto
 
-				// === Buscar MINHAS devoluções desse livro no backend ===
+				// 3) Buscar MINHAS devoluções desse livro (se logado)
 				let devolvidasDoUsuario = [];
-				if (ehCidadao) {
+				if (ehLogado) {
 					try {
 						const respMinhas = await fetch(`/livros/${livroId}/minhas-devolucoes?t=${Date.now()}`, {
-							headers: {
-								'Accept': 'application/json',
-								'X-Requested-With': 'XMLHttpRequest'
-							}
+							headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+							credentials: 'same-origin'
 						});
 						if (respMinhas.ok) {
-							devolvidasDoUsuario = await respMinhas.json(); // [{id, numero, data_fim_real}, ...]
+							const ct = respMinhas.headers.get('content-type') || '';
+							if (ct.includes('application/json')) {
+								devolvidasDoUsuario = await respMinhas.json();
+							} else {
+								console.warn('minhas-devolucoes não retornou JSON (provável redirect).');
+							}
+						} else if (respMinhas.status === 401) {
+							console.warn('Não autenticado para listar devoluções.');
 						} else {
 							console.warn('Falha ao buscar minhas devoluções:', respMinhas.status);
 						}
@@ -526,48 +493,48 @@
 					}
 				}
 
-				const podeEnviarReview = ehCidadao && Array.isArray(devolvidasDoUsuario) && devolvidasDoUsuario.length > 0;
+				const podeEnviarReview = ehLogado && Array.isArray(devolvidasDoUsuario) && devolvidasDoUsuario.length > 0;
 
-				// lista de reviews
+				// 4) Lista de reviews
 				const listHtml = reviews.length > 0 ?
 					reviews.map(r => `
-						<div class="border rounded p-4 bg-base-200 mb-3">
-							<div class="flex items-center justify-between">
-								<div class="font-semibold">${escapeHtml(r.user?.name || 'Anônimo')}</div>
-								<div class="text-sm opacity-70">${new Date(r.created_at).toLocaleDateString()}</div>
-							</div>
-							<div class="mt-1">${'⭐'.repeat(r.rating)}</div>
-							${r.comentario ? `<p class="mt-2">${escapeHtml(r.comentario)}</p>` : ''}
-						</div>
-					`).join('') :
+          <div class="border rounded p-4 bg-base-200 mb-3">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold">${escapeHtml(r.user?.name || 'Anônimo')}</div>
+              <div class="text-sm opacity-70">${new Date(r.created_at).toLocaleDateString()}</div>
+            </div>
+            <div class="mt-1">${'⭐'.repeat(r.rating)}</div>
+            ${r.comentario ? `<p class="mt-2">${escapeHtml(r.comentario)}</p>` : ''}
+          </div>
+        `).join('') :
 					`<div class="opacity-60">Ainda não há reviews para este livro.</div>`;
 
-				// formulário (1 ou várias devoluções)
+				// 5) Formulário (1 ou várias devoluções)
 				let formHtml = '';
 				if (podeEnviarReview) {
 					if (devolvidasDoUsuario.length === 1) {
 						const requisicaoId = devolvidasDoUsuario[0].id;
 						formHtml = `
-							<div class="mt-6 border rounded p-4 bg-white">
-								<h4 class="font-semibold mb-3">Deixar uma review</h4>
-								<form id="form-review" method="POST" action="/requisicoes/${requisicaoId}/reviews">
-									<input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">
-									<div class="flex items-center gap-3 mb-3">
-										<label class="label">Avaliação:</label>
-										<select name="rating" class="select select-bordered" required>
-											<option value="">Selecione</option>
-											${[1,2,3,4,5].map(i => `<option value="${i}">${i} ⭐</option>`).join('')}
-										</select>
-									</div>
-									<div class="mb-3">
-										<label class="label">Comentário (opcional)</label>
-										<textarea name="comentario" class="textarea textarea-bordered w-full" rows="4"
-											maxlength="2000" placeholder="O que achou do livro?"></textarea>
-									</div>
-									<button type="submit" class="btn btn-primary">Enviar review</button>
-								</form>
-								<p class="text-xs text-gray-500 mt-2">Sua review será analisada antes de ser publicada.</p>
-							</div>`;
+          <div class="mt-6 border rounded p-4 bg-white">
+            <h4 class="font-semibold mb-3">Deixar uma review</h4>
+            <form id="form-review" method="POST" action="/requisicoes/${requisicaoId}/reviews">
+              <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">
+              <div class="flex items-center gap-3 mb-3">
+                <label class="label">Avaliação:</label>
+                <select name="rating" class="select select-bordered" required>
+                  <option value="">Selecione</option>
+                  ${[1,2,3,4,5].map(i => `<option value="${i}">${i} ⭐</option>`).join('')}
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="label">Comentário (opcional)</label>
+                <textarea name="comentario" class="textarea textarea-bordered w-full" rows="4"
+                  maxlength="2000" placeholder="O que achou do livro?"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">Enviar review</button>
+            </form>
+            <p class="text-xs text-gray-500 mt-2">Sua review será analisada antes de ser publicada.</p>
+          </div>`;
 					} else {
 						const options = devolvidasDoUsuario.map(req => {
 							const numero = req.numero ?? ('REQ-' + String(req.id).padStart(4, '0'));
@@ -576,40 +543,40 @@
 						}).join('');
 
 						formHtml = `
-							<div class="mt-6 border rounded p-4 bg-white">
-								<h4 class="font-semibold mb-3">Deixar uma review</h4>
-								<form id="form-review" method="POST">
-									<input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">
-									<div class="mb-3">
-										<label class="label">Escolha a requisição que deseja avaliar</label>
-										<select id="requisicaoParaReview" class="select select-bordered" required>
-											<option value="">Selecione...</option>
-											${options}
-										</select>
-									</div>
-									<div class="flex items-center gap-3 mb-3">
-										<label class="label">Avaliação:</label>
-										<select name="rating" class="select select-bordered" required>
-											<option value="">Selecione</option>
-											${[1,2,3,4,5].map(i => `<option value="${i}">${i} ⭐</option>`).join('')}
-										</select>
-									</div>
-									<div class="mb-3">
-										<label class="label">Comentário (opcional)</label>
-										<textarea name="comentario" class="textarea textarea-bordered w-full" rows="4"
-											maxlength="2000" placeholder="O que achou do livro?"></textarea>
-									</div>
-									<button type="submit" class="btn btn-primary">Enviar review</button>
-								</form>
-								<p class="text-xs text-gray-500 mt-2">Sua review será analisada antes de ser publicada.</p>
-							</div>`;
+          <div class="mt-6 border rounded p-4 bg-white">
+            <h4 class="font-semibold mb-3">Deixar uma review</h4>
+            <form id="form-review" method="POST">
+              <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]').content}">
+              <div class="mb-3">
+                <label class="label">Escolha a requisição que deseja avaliar</label>
+                <select id="requisicaoParaReview" class="select select-bordered" required>
+                  <option value="">Selecione...</option>
+                  ${options}
+                </select>
+              </div>
+              <div class="flex items-center gap-3 mb-3">
+                <label class="label">Avaliação:</label>
+                <select name="rating" class="select select-bordered" required>
+                  <option value="">Selecione</option>
+                  ${[1,2,3,4,5].map(i => `<option value="${i}">${i} ⭐</option>`).join('')}
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="label">Comentário (opcional)</label>
+                <textarea name="comentario" class="textarea textarea-bordered w-full" rows="4"
+                  maxlength="2000" placeholder="O que achou do livro?"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">Enviar review</button>
+            </form>
+            <p class="text-xs text-gray-500 mt-2">Sua review será analisada antes de ser publicada.</p>
+          </div>`;
 					}
 				}
 
 				c.innerHTML = `<h5 class="font-semibold mb-2">Reviews</h5>${listHtml}${formHtml}`;
 				c.dataset.filled = '1';
 
-				// submit (suporta o caso com select)
+				// 6) Submit do form
 				const form = document.getElementById('form-review');
 				if (form) {
 					form.addEventListener('submit', async (e) => {
@@ -628,9 +595,11 @@
 							method: 'POST',
 							headers: {
 								'Accept': 'application/json',
+								'X-Requested-With': 'XMLHttpRequest',
 								'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
 							},
-							body: formData
+							body: formData,
+							credentials: 'same-origin'
 						});
 						if (response.ok) {
 							alert('Review enviada com sucesso! Ela será analisada antes de ser publicada.');

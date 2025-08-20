@@ -108,7 +108,7 @@
 			</div>
 		</div>
 	</nav>
-
+	
 	<!-- SIDEBAR FIXA COM ÍCONES GRANDES -->
 	@auth
 	<div class="fixed top-0 left-0 h-screen w-20 bg-gray-800 z-50 flex flex-col items-center py-6">
