@@ -75,8 +75,11 @@
 							<th class="min-w-[80px]">{!! sort_link('preco', 'Preço', $sortField, $sortDirection) !!}</th>
 							<th>Disponível?</th>
 							@auth
+								<th class="min-w-[120px] text-center">Comprar</th>
+							@endauth
+							@auth
 							@if (Auth::user()->isAdmin())
-							<th class="w-32 text-center">Ações</th>
+								<th class="w-32 text-center">Ações</th>
 							@endif
 							@endauth
 						</tr>
@@ -115,7 +118,16 @@
 								<span class="badge badge-error">Não</span>
 								@endif
 							</td>
-
+							@auth
+							<td class="text-center">
+								<form method="POST" action="{{ route('carrinho.add', ['livro' => $livro->getRouteKey()]) }}">
+									@csrf
+									<input type="hidden" name="quantidade" value="1">
+									<button class="btn btn-sm btn-outline btn-success">+ 🛒</button>
+								</form>
+							</td>
+							@endauth
+							
 							@auth
 							@if(Auth::user()->isAdmin())
 							<td class="w-32 px-2">
@@ -172,6 +184,14 @@
 					<input type="hidden" name="livro_id" id="input-livro-id-alerta" />
 					<button type="submit" class="btn btn-warning btn-outline">Avise-me</button>
 				</form>
+
+				@auth
+				<form id="form-add-carrinho" method="POST" action="#">
+					@csrf
+					<input type="hidden" name="quantidade" value="1">
+					<button class="btn btn-outline btn-success">+ Carrinho</button>
+				</form>
+				@endauth
 
 				<label for="modal-detalhes-livro" class="btn btn-error btn-outline">Fechar</label>
 			</div>
@@ -292,6 +312,10 @@
 			}
 
 			LIVRO_ATUAL = livro;
+			const formAdd = document.getElementById('form-add-carrinho');
+			if (formAdd && livro.id) {
+				formAdd.action = "{{ url('/livros') }}/" + livro.id + "/add";
+			}
 
 			document.getElementById('wrap-historico')?.classList.add('hidden');
 			document.getElementById('wrap-reviews')?.classList.add('hidden');

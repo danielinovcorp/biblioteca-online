@@ -83,4 +83,14 @@ class User extends Authenticatable
             ->map(fn($parte) => strtoupper(mb_substr($parte, 0, 1)))
             ->join('');
     }
+
+    public function carrinho()
+    {
+        return $this->hasOne(\App\Models\Carrinho::class);
+    }
+
+    public function encomendas()
+    {
+        return $this->hasMany(\App\Models\Encomenda::class);
+    }
 }

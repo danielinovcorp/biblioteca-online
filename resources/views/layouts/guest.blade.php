@@ -50,7 +50,7 @@
 
 				<!-- Autenticação -->
 				<div class="block">
-					<div class="ml-4 flex items-center md:ml-6">
+					<div class="ml-4 flex items-center gap-3 md:ml-6">
 						@auth
 						<div class="relative">
 							<x-dropdown align="right" width="48">
@@ -99,6 +99,9 @@
 								</x-slot>
 							</x-dropdown>
 						</div>
+
+						{{-- 🛒 Indicador do carrinho AO LADO do nome/foto --}}
+						<x-cart-indicator />
 						@else
 						<x-nav-link href="{{ route('login') }}" :active="request()->is('login')">Entrar</x-nav-link>
 						<x-nav-link href="{{ route('register') }}" :active="request()->is('register')">Registar</x-nav-link>
@@ -108,7 +111,7 @@
 			</div>
 		</div>
 	</nav>
-	
+
 	<!-- SIDEBAR FIXA COM ÍCONES GRANDES -->
 	@auth
 	<div class="fixed top-0 left-0 h-screen w-20 bg-gray-800 z-50 flex flex-col items-center py-6">
@@ -141,6 +144,12 @@
 				:active="request()->routeIs('admin.usuarios.*')"
 				icon="fas fa-users"
 				title="Usuários" />
+
+			<x-sidebar-link
+				href="{{ route('admin.encomendas.index') }}"
+				:active="request()->routeIs('admin.encomendas.*')"
+				icon="fas fa-box-open"
+				title="Encomendas" />
 			@endif
 		</div>
 	</div>

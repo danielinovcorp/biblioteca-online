@@ -167,4 +167,18 @@ class Livro extends Model
 			->orderByRaw($orderRaw)
 			->get();
 	}
+
+	public function carrinhos()
+	{
+		return $this->belongsToMany(\App\Models\Carrinho::class, 'carrinho_livro')
+			->withPivot(['quantidade'])
+			->withTimestamps();
+	}
+
+	public function encomendas()
+	{
+		return $this->belongsToMany(\App\Models\Encomenda::class, 'encomenda_livro')
+			->withPivot(['quantidade', 'preco_unitario', 'titulo_livro'])
+			->withTimestamps();
+	}
 }
