@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\LogsModelEvents;
+
 
 class Livro extends Model
 {
-	use HasFactory;
+	use HasFactory, LogsModelEvents;
+
+	protected static string $MODULE_NAME = 'Livros';
 
 	protected $table = 'livros';
 
@@ -18,7 +22,7 @@ class Livro extends Model
 		'bibliografia',
 		'imagem_capa',
 		'preco',
-		// REMOVIDO: 'disponivel' (não existe coluna no BD)
+		'stock',
 	];
 
 	// Anexamos os atributos virtuais ao JSON/array

@@ -20,6 +20,7 @@ use App\Http\Controllers\CarrinhoController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\Admin\EncomendasAdminController;
+use App\Http\Controllers\Admin\LogController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -126,11 +127,11 @@ Route::middleware(['auth'])->group(function () {
  * Área Admin
  */
 Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/usuarios', [AdminUsuarioController::class, 'index'])->name('usuarios.index');
-    Route::post('/usuarios', [AdminUsuarioController::class, 'store'])->name('usuarios.store');
-    Route::get('/usuarios/{user}/edit', [AdminUsuarioController::class, 'edit'])->name('usuarios.edit');
-    Route::put('/usuarios/{user}', [AdminUsuarioController::class, 'update'])->name('usuarios.update');
-    Route::delete('/usuarios/{user}', [AdminUsuarioController::class, 'destroy'])->name('usuarios.destroy');
+	Route::get('/usuarios', [AdminUsuarioController::class, 'index'])->name('usuarios.index');
+	Route::post('/usuarios', [AdminUsuarioController::class, 'store'])->name('usuarios.store');
+	Route::get('/usuarios/{user}/edit', [AdminUsuarioController::class, 'edit'])->name('usuarios.edit');
+	Route::put('/usuarios/{user}', [AdminUsuarioController::class, 'update'])->name('usuarios.update');
+	Route::delete('/usuarios/{user}', [AdminUsuarioController::class, 'destroy'])->name('usuarios.destroy');
 });
 
 Route::post('/requisicoes/{requisicao}/confirmar-devolucao', [RequisicaoController::class, 'confirmarDevolucao'])
@@ -159,27 +160,34 @@ Route::post('/requisicoes/{requisicao}/reviews', [ReviewController::class, 'stor
 	->name('reviews.store');
 
 Route::middleware(['auth'])->group(function () {
-    // Carrinho
-    Route::get('carrinho',            [CarrinhoController::class, 'index'])->name('carrinho.index');
-    Route::post('livros/{livro}/add', [CarrinhoController::class, 'add'])->name('carrinho.add');
-    Route::patch('carrinho/{livro}',  [CarrinhoController::class, 'update'])->name('carrinho.update');
-    Route::delete('carrinho/{livro}', [CarrinhoController::class, 'remove'])->name('carrinho.remove');
-    Route::delete('carrinho',         [CarrinhoController::class, 'clear'])->name('carrinho.clear');
+	// Carrinho
+	Route::get('carrinho',            [CarrinhoController::class, 'index'])->name('carrinho.index');
+	Route::post('livros/{livro}/add', [CarrinhoController::class, 'add'])->name('carrinho.add');
+	Route::patch('carrinho/{livro}',  [CarrinhoController::class, 'update'])->name('carrinho.update');
+	Route::delete('carrinho/{livro}', [CarrinhoController::class, 'remove'])->name('carrinho.remove');
+	Route::delete('carrinho',         [CarrinhoController::class, 'clear'])->name('carrinho.clear');
 
-    // Checkout (passo 2: morada  → passo 3: pagamento)
-    Route::get('checkout/morada',   [CheckoutController::class, 'showMorada'])->name('checkout.morada');
-    Route::post('checkout/morada',  [CheckoutController::class, 'storeMorada'])->name('checkout.morada.store');
-    Route::get('checkout/sucesso',  [CheckoutController::class, 'sucesso'])->name('checkout.sucesso');
-    Route::get('checkout/cancelado',[CheckoutController::class, 'cancelado'])->name('checkout.cancelado');
+	// Checkout (passo 2: morada  → passo 3: pagamento)
+	Route::get('checkout/morada',   [CheckoutController::class, 'showMorada'])->name('checkout.morada');
+	Route::post('checkout/morada',  [CheckoutController::class, 'storeMorada'])->name('checkout.morada.store');
+	Route::get('checkout/sucesso',  [CheckoutController::class, 'sucesso'])->name('checkout.sucesso');
+	Route::get('checkout/cancelado',[CheckoutController::class, 'cancelado'])->name('checkout.cancelado');
 });
 
 // Stripe webhook (sem auth)
 Route::post('stripe/webhook', [StripeWebhookController::class, 'handle'])
-    ->name('stripe.webhook')
-    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+	->name('stripe.webhook')
+	->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
 // Admin – encomendas
 Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('encomendas', [EncomendasAdminController::class, 'index'])->name('encomendas.index');
-    Route::get('encomendas/{encomenda}', [EncomendasAdminController::class, 'show'])->name('encomendas.show');
+	Route::get('encomendas', [EncomendasAdminController::class, 'index'])->name('encomendas.index');
+	Route::get('encomendas/{encomenda}', [EncomendasAdminController::class, 'show'])->name('encomendas.show');
 });
+
+Route::middleware(['auth', IsAdmin::class])
+	->prefix('admin')
+	->name('admin.')
+	->group(function () {
+		Route::get('logs', [LogController::class, 'index'])->name('logs.index');
+	});

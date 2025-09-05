@@ -26,10 +26,10 @@
             </div>
         @else
             <div class="card bg-base-100 shadow">
-                <div class="card-body">
-                    <h2 class="card-title">Obrigado!</h2>
+                <div class="card-body bg-white">
+                    <h2 class="card-title justify-center">Obrigado!</h2>
                     <p>Irás receber confirmação por email assim que a transação for validada.</p>
-                    <div class="card-actions justify-end">
+                    <div class="card-actions justify-center">
                         <a href="{{ route('home') }}" class="btn btn-primary">Voltar à página inicial</a>
                     </div>
                 </div>

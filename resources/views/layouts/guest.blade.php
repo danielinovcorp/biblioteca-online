@@ -150,6 +150,12 @@
 				:active="request()->routeIs('admin.encomendas.*')"
 				icon="fas fa-box-open"
 				title="Encomendas" />
+
+			<x-sidebar-link
+				href="{{ route('admin.logs.index') }}"
+				:active="request()->routeIs('admin.logs.*')"
+				icon="fas fa-clipboard-list"
+				title="Logs" />
 			@endif
 		</div>
 	</div>

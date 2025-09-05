@@ -5,58 +5,64 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Concerns\LogsModelEvents;
+
 
 class Encomenda extends Model
 {
-    protected $table = 'encomendas';
+	use LogsModelEvents;
 
-    protected $fillable = [
-        'user_id',
-        'morada',
-        'cidade',
-        'codigo_postal',
-        'telefone',
-        'estado',                 // pendente | paga
-        'total',
-        'stripe_session_id',
-        'stripe_payment_intent',
-    ];
+	protected static string $MODULE_NAME = 'Encomendas';
 
-    protected $casts = [
-        'total' => 'decimal:2',
-    ];
+	protected $table = 'encomendas';
 
-    /** Relations */
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
+	protected $fillable = [
+		'user_id',
+		'morada',
+		'cidade',
+		'codigo_postal',
+		'telefone',
+		'estado',                 // pendente | paga
+		'total',
+		'stripe_session_id',
+		'stripe_payment_intent',
+	];
 
-    // muitos-para-muitos com pivot (quantidade, preco_unitario, titulo_livro)
-    public function livros(): BelongsToMany
-    {
-        return $this->belongsToMany(Livro::class, 'encomenda_livro')
-            ->withPivot(['quantidade', 'preco_unitario', 'titulo_livro'])
-            ->withTimestamps();
-    }
+	protected $casts = [
+		'total' => 'decimal:2',
+	];
 
-    /** Scopes */
-    public function scopePagas($q)
-    {
-        return $q->where('estado', 'paga');
-    }
+	/** Relations */
+	public function user(): BelongsTo
+	{
+		return $this->belongsTo(User::class);
+	}
 
-    public function scopePendentes($q)
-    {
-        return $q->where('estado', 'pendente');
-    }
+	// muitos-para-muitos com pivot (quantidade, preco_unitario, titulo_livro)
+	public function livros(): BelongsToMany
+	{
+		return $this->belongsToMany(Livro::class, 'encomenda_livro')
+			->withPivot(['quantidade', 'preco_unitario', 'titulo_livro'])
+			->withTimestamps();
+	}
 
-    /** Helpers */
-    public function totalCalculado(): float
-    {
-        // recalcula a partir dos itens (útil para validações)
-        return (float) $this->livros->sum(function (Livro $l) {
-            return (int) $l->pivot->quantidade * (float) $l->pivot->preco_unitario;
-        });
-    }
+	/** Scopes */
+	public function scopePagas($q)
+	{
+		return $q->where('estado', 'paga');
+	}
+
+	public function scopePendentes($q)
+	{
+		return $q->where('estado', 'pendente');
+	}
+
+	/** Helpers */
+	public function totalCalculado(): float
+	{
+		// recalcula a partir dos itens (útil para validações)
+		return (float) $this->livros->sum(function (Livro $l) {
+			return (int) $l->pivot->quantidade * (float) $l->pivot->preco_unitario;
+		});
+	}
 }

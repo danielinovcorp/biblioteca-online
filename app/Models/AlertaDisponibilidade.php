@@ -4,21 +4,26 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\LogsModelEvents;
+
+
 
 class AlertaDisponibilidade extends Model
 {
-    use HasFactory;
+	use HasFactory, LogsModelEvents;
 
-    protected $fillable = ['user_id', 'livro_id'];
-    protected $table = 'alertas_disponibilidade';
+	protected static string $MODULE_NAME = 'Alertas';
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+	protected $fillable = ['user_id', 'livro_id'];
+	protected $table = 'alertas_disponibilidade';
 
-    public function livro()
-    {
-        return $this->belongsTo(Livro::class);
-    }
+	public function user()
+	{
+		return $this->belongsTo(User::class);
+	}
+
+	public function livro()
+	{
+		return $this->belongsTo(Livro::class);
+	}
 }

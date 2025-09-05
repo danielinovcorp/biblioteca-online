@@ -6,13 +6,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
+use App\Models\Concerns\LogsModelEvents;
+
 
 class Carrinho extends Model
 {
+	use LogsModelEvents;
+
+	protected static string $MODULE_NAME = 'Carrinhos';
+
 	protected $table = 'carrinhos';
 
 	protected $fillable = [
 		'user_id',
+		'status',
 		'abandoned_notified_at',
 	];
 

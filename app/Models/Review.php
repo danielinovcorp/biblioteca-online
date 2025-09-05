@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Concerns\LogsModelEvents;
+
 
 class Review extends Model
 {
-	use HasFactory;
+	use HasFactory, LogsModelEvents;
+
+	protected static string $MODULE_NAME = 'Reviews';
 
 	protected $fillable = [
 		'livro_id',
